@@ -116,12 +116,12 @@
 	};
 
 	/*
-		options:	Optional options object, see jQuery.easybox()
-		linkMapper:	Optional function taking a link DOM element and an index as arguments and returning an array containing 2 elements:
-				the image URL and the image caption (may contain HTML)
-		linksFilter:	Optional function taking a link DOM element and an index as arguments and returning true if the element is part of
-				the image collection that will be shown on click, false if not. "this" refers to the element that was clicked.
-				This function must always return true when the DOM element argument is "this".
+		options:     Optional options object given to $.easybox function
+		linkMapper:  Optional function taking a link DOM element and an index as arguments and returning an array containing 2 elements:
+		             the image URL and the image caption (may contain HTML)
+		linksFilter: Optional function taking a link DOM element and an index as arguments and returning true if the element is part of
+		             the image collection that will be shown on click, false if not. "this" refers to the element that was clicked.
+		             This function must always return true when the DOM element argument is "this".
 	*/
 	$.fn.easybox = function(_options, linkMapper, linksFilter) {
 		linkMapper = linkMapper || function(el) {
@@ -214,7 +214,7 @@
 			if ((nextIndex >= 0) && (/(\.jpg|\.jpeg|\.png|\.gif)$/i.test(resources[nextIndex][0])))
 				(new Image()).src = resources[nextIndex][0];
 
-			if (/(\.jpg|\.jpeg|\.png|\.gif)$/i.test(resources[activeIndex][0])) {
+			if (imageLink()) {
 				$(center).addClass("easyLoading");
 				imageObj = new Image();
 				imageObj.onload = function() {
@@ -227,11 +227,11 @@
 					animateBox();
 				}
 				imageObj.src = resources[activeIndex][0];
-			} else if ((r = /^http\:\/\/www\.youtube\.com\/watch\?v=([A-Za-z0-9]*)(&(.*))?/i.exec(resources[activeIndex][0])) != null) {
+			} else if ((id = youtubeLink()) != false) {
 				$(center).addClass("easyLoading");
 				ajaxReq = $.ajax('http://gdata.youtube.com/feeds/api/videos?v=2&alt=jsonc', {
 					type: 'GET',
-					data: {q: r[1]},
+					data: {q: id},
 					dataType: 'jsonp',
 					timeout: 2000,
 					success: function(r) {
@@ -249,9 +249,9 @@
 							animateBox();
 						}
 					}});
-			} else if ((r = /^http\:\/\/vimeo\.com\/([0-9]*)(.*)?/i.exec(resources[activeIndex][0])) != null) {
+			} else if ((id = vimeoLink()) != false) {
 				$(center).addClass("easyLoading");
-				ajaxReq = $.ajax('http://vimeo.com/api/v2/video/'+r[1]+'.json', {
+				ajaxReq = $.ajax('http://vimeo.com/api/v2/video/'+id+'.json', {
 					type: 'GET',
 					dataType: 'jsonp',
 					timeout: 2000,
@@ -293,25 +293,22 @@
 		$(center).removeClass();
 		
 		if (!loadError) {
-			if (/(\.jpg|\.jpeg|\.png|\.gif)$/i.test(resources[activeIndex][0])) {
+			if (imageLink()) {
 				cw = (imageWidth > 0) ? imageWidth : options.defWidth;
 				ch = (imageHeight > 0) ? imageHeight : options.defHeight;
 				if (ch > options.maxHeight) { cw = Math.round(options.maxHeight*cw/ch); ch = options.maxHeight; }
 				if (cw > options.maxWidth) { ch = Math.round(options.maxWidth/cw*ch); cw = options.maxWidth; }
 				$("<img src=\""+resources[activeIndex][0]+"\" width=\""+cw+"\" height=\""+ch+"\" alt=\""+resources[activeIndex][1]+"\" />").appendTo(container);
-			} else if ((r = /^http\:\/\/www\.youtube\.com\/watch\?v=([A-Za-z0-9]*)(&(.*))?/i.exec(resources[activeIndex][0])) != null) {
+			} else if ((id = youtubeLink()) != false) {
 				ch = options.ytPlayerHeight;
-				if (videoWidescreen)
-					cw = Math.round(ch*16.0/9.0);
-				else
-					cw = Math.round(ch*4.0/3.0);
-				$("<object style=\"width:"+cw+"px;height:"+ch+"px\" width=\""+cw+"\" height=\""+ch+"\"><param name=\"movie\" value=\"http://www.youtube.com/v/"+r[1]+"?version=3&autohide=1&autoplay=1&rel=0\"></param><param name=\"AllowFullscreen\" value=\"true\"></param><param name=\"AllowScriptAccess\" value=\"always\"></param></param><embed src=\"http://www.youtube.com/v/"+r[1]+"?version=3&autohide=1&autoplay=1&rel=0\" width=\""+cw+"\" height=\""+ch+"\" type=\"application/x-shockwave-flash\" allowscriptaccess=\"always\" allowfullscreen=\"true\"></embed></object>").appendTo(container);
-			} else if ((r = /^http\:\/\/vimeo\.com\/([0-9]*)(.*)?/i.exec(resources[activeIndex][0])) != null) {
+				cw = Math.round(ch*((videoWidescreen) ? (16.0/9.0) : (4.0/3.0)));
+				$("<iframe src=\"http://www.youtube.com/embed/"+id+"?version=3&autohide=1&autoplay=1&rel=0\" width=\""+cw+"\" height=\""+ch+"\" frameborder=\"0\"></iframe>").appendTo(container);
+			} else if ((id = vimeoLink()) != false) {
 				cw = (videoWidth > 0) ? videoWidth : options.defWidth;
 				ch = (videoHeight > 0) ? videoHeight : options.defHeight;
 				if (ch > options.maxHeight) { cw = Math.round(options.maxHeight*cw/ch); ch = options.maxHeight; }
 				if (cw > options.maxWidth) { ch = Math.round(options.maxWidth/cw*ch); cw = options.maxWidth; }
-				$("<iframe src=\"http://player.vimeo.com/video/"+r[1]+"?title=0&byline=0&portrait=0&autoplay=true\" width=\""+cw+"\" height=\""+ch+"\" frameborder=\"0\"></iframe>").appendTo(container);
+				$("<iframe src=\"http://player.vimeo.com/video/"+id+"?title=0&byline=0&portrait=0&autoplay=true\" width=\""+cw+"\" height=\""+ch+"\" frameborder=\"0\"></iframe>").appendTo(container);
 			} else {
 				cw = options.defWidth;
 				ch = options.defHeight;
@@ -394,6 +391,23 @@
 		}
 
 		return false;
+	}
+	
+	/* returns true if the link is an image */
+	function imageLink() {
+		return /(\.jpg|\.jpeg|\.png|\.gif)$/i.test(resources[activeIndex][0]);
+	}
+	
+	/* returns the youtube id if active link is a youtube link */
+	function youtubeLink() {
+		var r = /^http\:\/\/www\.youtube\.com\/watch\?v=([A-Za-z0-9]*)(&(.*))?/i.exec(resources[activeIndex][0]);
+		return (r != null) ? r[1] : false;
+	}
+
+	/* returns the vimeo id if active link is a vimeo link */
+	function vimeoLink() {
+		var r = r = /^http\:\/\/vimeo\.com\/([0-9]*)(.*)?/i.exec(resources[activeIndex][0]);
+		return (r != null) ? r[1] : false;
 	}
 	
 	/* easing function with a little bounce effect */
