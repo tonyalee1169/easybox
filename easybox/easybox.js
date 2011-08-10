@@ -70,23 +70,25 @@
 
 		// complete options
 		options = $.extend({
-			loop: false,				// Allows to navigate between first and last images
-			overlayOpacity: 0.8,			// 1 is opaque, 0 is completely transparent (change the color in the CSS file)
-			resizeDuration: 400,			// Duration of each of the box resize animations (in milliseconds)
-			fadeDuration: 400,			// Duration of the image fade-in animation (in milliseconds)
-			resizeEasing: "swing",			// "swing" is jQuery's default easing
-			initialWidth: 250,			// Initial width of the box (in pixels)
-			initialHeight: 250,			// Initial height of the box (in pixels)
-			closeWidth: 128,
-			closeHeight: 128,
-			contentWidth: 640,			// default content width
-			contentHeight: 480,			// default content height
-			ytPlayerHeight: 360,		// default youtube player height
-			captionAnimationDuration: 400,		// Duration of the caption animation (in milliseconds)
-			counterText: "{x} of {y}",	// Translate or change as you wish, or set it to false to disable counter text for image groups
-			closeKeys: [27, 88, 67],		// Array of keycodes to close easybox, default: Esc (27), 'x' (88), 'c' (67)
-			previousKeys: [37, 80],			// Array of keycodes to navigate to the previous image, default: Left arrow (37), 'p' (80)
-			nextKeys: [39, 78]			// Array of keycodes to navigate to the next image, default: Right arrow (39), 'n' (78)
+			loop: false,               // navigate between first and last image
+			overlayOpacity: 0.8,       // opacity of the overlay from 0 to 1
+			resizeDuration: 400,       // box resize duration
+			resizeEasing: 'easybox',   // resize easing method; 'swing' = default
+			fadeDuration: 400,         // image fade-in duration
+			initWidth: 250,            // width of the box in initial or error state
+			initHeight: 250,           // height of the box in initial or error state
+			defWidth: 640,             // default content width
+			defHeight: 480,            // default content height
+			closeWidth: 128,           // width the box fades to when closing
+			closeHeight: 128,          // height the box fades to when closing
+			maxWidth: 1280,            // shouldn't be smaller than defWidth and ytPlayerHeight*16/9
+			maxHeight: 720,            // shouldn't be smaller than defHeight and ytPlayerHeight
+			ytPlayerHeight: 360,       // default youtube player height
+			captionFadeDuration: 200,  // caption fade duration
+			counterText: "{x} of {y}", // counter text; {x} replaced with current image number; {y} replaced with total image count
+			closeKeys: [27, 88, 67],   // array of keycodes to close easybox, default: Esc (27), 'x' (88), 'c' (67)
+			previousKeys: [37, 80],    // array of keycodes to navigate to the previous image, default: Left arrow (37), 'p' (80)
+			nextKeys: [39, 78]         // array of keycodes to navigate to the next image, default: Right arrow (39), 'n' (78)
 		}, _options);
 
 		// The function is called for a single image, with URL and Title as first two arguments
@@ -100,8 +102,8 @@
 		options.loop = options.loop && (resources.length > 1);
 
 		// initializing center
-		centerWidth = options.initialWidth;
-		centerHeight = options.initialHeight;
+		centerWidth = options.initWidth;
+		centerHeight = options.initHeight;
 		$(center).css({width: centerWidth, height: centerHeight, marginLeft: -centerWidth/2, marginTop: -centerHeight/2, opacity: ""});
 
 		setup(1);
@@ -292,8 +294,10 @@
 		
 		if (!loadError) {
 			if (/(\.jpg|\.jpeg|\.png|\.gif)$/i.test(resources[activeIndex][0])) {
-				cw = (imageWidth > 0) ? imageWidth : options.contentWidth;
-				ch = (imageHeight > 0) ? imageHeight : options.contentHeight;
+				cw = (imageWidth > 0) ? imageWidth : options.defWidth;
+				ch = (imageHeight > 0) ? imageHeight : options.defHeight;
+				if (ch > options.maxHeight) { cw = Math.round(options.maxHeight*cw/ch); ch = options.maxHeight; }
+				if (cw > options.maxWidth) { ch = Math.round(options.maxWidth/cw*ch); cw = options.maxWidth; }
 				$("<img src=\""+resources[activeIndex][0]+"\" width=\""+cw+"\" height=\""+ch+"\" alt=\""+resources[activeIndex][1]+"\" />").appendTo(container);
 			} else if ((r = /^http\:\/\/www\.youtube\.com\/watch\?v=([A-Za-z0-9]*)(&(.*))?/i.exec(resources[activeIndex][0])) != null) {
 				ch = options.ytPlayerHeight;
@@ -303,12 +307,14 @@
 					cw = Math.round(ch*4.0/3.0);
 				$("<object style=\"width:"+cw+"px;height:"+ch+"px\" width=\""+cw+"\" height=\""+ch+"\"><param name=\"movie\" value=\"http://www.youtube.com/v/"+r[1]+"?version=3&autohide=1&autoplay=1&rel=0\"></param><param name=\"AllowFullscreen\" value=\"true\"></param><param name=\"AllowScriptAccess\" value=\"always\"></param></param><embed src=\"http://www.youtube.com/v/"+r[1]+"?version=3&autohide=1&autoplay=1&rel=0\" width=\""+cw+"\" height=\""+ch+"\" type=\"application/x-shockwave-flash\" allowscriptaccess=\"always\" allowfullscreen=\"true\"></embed></object>").appendTo(container);
 			} else if ((r = /^http\:\/\/vimeo\.com\/([0-9]*)(.*)?/i.exec(resources[activeIndex][0])) != null) {
-				cw = (videoWidth > 0) ? videoWidth : options.contentWidth;
-				ch = (videoHeight > 0) ? videoHeight : options.contentHeight;
+				cw = (videoWidth > 0) ? videoWidth : options.defWidth;
+				ch = (videoHeight > 0) ? videoHeight : options.defHeight;
+				if (ch > options.maxHeight) { cw = Math.round(options.maxHeight*cw/ch); ch = options.maxHeight; }
+				if (cw > options.maxWidth) { ch = Math.round(options.maxWidth/cw*ch); cw = options.maxWidth; }
 				$("<iframe src=\"http://player.vimeo.com/video/"+r[1]+"?title=0&byline=0&portrait=0&autoplay=true\" width=\""+cw+"\" height=\""+ch+"\" frameborder=\"0\"></iframe>").appendTo(container);
 			} else {
-				cw = options.contentWidth;
-				ch = options.contentHeight;
+				cw = options.defWidth;
+				ch = options.defHeight;
 				$("<iframe width=\""+cw+"\" height=\""+ch+"\" src=\""+resources[activeIndex][0]+"\"></iframe>").appendTo(container);
 			}
 			
@@ -321,8 +327,8 @@
 			$(caption).html(resources[activeIndex][1] || "");
 		} else {
 			$(center).addClass("easyError");
-			centerWidth = options.initialWidth;
-			centerHeight = options.initialHeight;
+			centerWidth = options.initWidth;
+			centerHeight = options.initHeight;
 
 			// clear caption
 			$(caption).html("");
@@ -348,12 +354,12 @@
 		Called by animateBox() when finished
 	*/
 	function animateCaption() {
-		if (prevIndex >= 0) $(prevLink).css({display: "none", visibility: "", opacity: ""}).fadeIn(options.captionAnimationDuration);
-		if (nextIndex >= 0) $(nextLink).css({display: "none", visibility: "", opacity: ""}).fadeIn(options.captionAnimationDuration);
+		if (prevIndex >= 0) $(prevLink).css({display: "none", visibility: "", opacity: ""}).fadeIn(options.captionFadeDuration);
+		if (nextIndex >= 0) $(nextLink).css({display: "none", visibility: "", opacity: ""}).fadeIn(options.captionFadeDuration);
 
 		// fade in		
 		$(bottomContainer).css({visibility: "", display: ""});
-		$(bottom).css("marginTop", -bottom.offsetHeight).animate({marginTop: 0}, options.captionAnimationDuration);
+		$(bottom).css("marginTop", -bottom.offsetHeight).animate({marginTop: 0}, options.captionFadeDuration);
 	}
 
 	/*
@@ -382,12 +388,20 @@
 			activeIndex = prevIndex = nextIndex = -1;
 			// resize center
 			$(overlay).stop().fadeOut(options.fadeDuration, setup);
-			$(center).animate({height: options.closeHeight, marginTop: -options.closeHeight/2, width: options.closeWidth, marginLeft: -options.closeWidth/2, opacity: 0}, options.fadeDuration, options.resizeEasing, function() {
+			$(center).animate({height: options.closeHeight, marginTop: -options.closeHeight/2, width: options.closeWidth, marginLeft: -options.closeWidth/2, opacity: 0}, options.fadeDuration, function() {
 				$(center).hide();
 			});
 		}
 
 		return false;
 	}
-
+	
+	/* easing function with a little bounce effect */
+	$.easing.easybox = function(t, millisecondsSince, startValue, endValue, totalDuration) {
+		if (t < 0.7) {
+			return Math.pow(t/0.7, 2)*1.2;
+		} else {
+			return 1.2-Math.sqrt((t-0.7)/(1-0.7))*0.2;
+		}
+	}
 })(jQuery);
