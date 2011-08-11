@@ -1,43 +1,70 @@
 <!DOCTYPE html>
 <html>
 <head>
-	<title>EasyBox example page</title>
-	<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.6.2/jquery.min.js"></script>
-	<script type="text/javascript" src="easybox/easybox.min.js"></script>
-	<!--script type="text/javascript" src="easybox/easybox.js"></script>
-	<script type="text/javascript" src="easybox/autoload.js"></script-->
-	<link rel="stylesheet" href="easybox/easybox.min.css" type="text/css" media="screen" />
-	<!--link rel="stylesheet" href="easybox/easybox.css" type="text/css" media="screen" /-->
-	<style type="text/css">
-		body {
-			background-color: #fff;
-			font-family: arial, helvetica, sans-serif;
-			color: #000;
-		}
-		h1, p {
-			text-align: center;
-		}
-		p {
-			margin-top: 100px;
-		}
-		a {
-			font-weight: bold;
-			color: #f00;
-		}
-	</style>
+<title>EasyBox example page</title>
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.6.2/jquery.min.js"></script>
+<script type="text/javascript" src="easybox/easybox.min.js"></script>
+<!--script type="text/javascript" src="easybox/easybox.js"></script>
+<script type="text/javascript" src="easybox/autoload.js"></script-->
+<link rel="stylesheet" href="easybox/easybox.min.css" type="text/css" media="screen" />
+<!--link rel="stylesheet" href="easybox/easybox.css" type="text/css" media="screen" /-->
+<style type="text/css">
+body {
+	background-color: #f0f0f0;
+	font-family: arial, helvetica, sans-serif;
+	font-size: 12pt;
+	color: #000020;
+	}
+#wrapper {
+	margin: 0 auto;
+	padding: 16px;
+	max-width: 480px;
+	}
+#container {
+	display: none;
+	width: 320px;
+	height: 240px;
+	}
+a {
+	font-weight: bold;
+	color: #E00020;
+	text-decoration: none;
+	}
+</style>
 </head>
 <body>
-	<h1>Easybox example page</h1>
-	<p>
-		<a href="example.jpg" rel="lightbox" title="Beautiful, isn't it?">Click here</a> to view a picture inside Easybox.
-	</p>
-	<p>
-		<a href="http://www.youtube.com/watch?v=XJFmh6W1Jjo" rel="lightbox-video" title="Best song ever from Breed77">Click here</a> to view a video inside EasyBox.
-		<br /><a href="http://vimeo.com/993998" rel="lightbox-video">Click here</a> to view a video inside EasyBox.
-	</p>
-	<p>
-		<a href="http://www.example.com" rel="lightbox" title="example.com">Click here</a> to view a page inside EasyBox.
-	</p>
-<div style="width:2048px;height:2048px"></div>
+<div id="wrapper">
+<h1>Easybox example page</h1>
+<p>EasyBox is a lightbox clone based on the light-weight Slimbox2 script. It offers a variety of additional features such as:</p>
+<p><ul><li>displaying YouTube and Vimeo videos,</li>
+<li>displaying inline content,</li>
+<li>displaying iFrames and</li>
+<li>better animations</li></ul></p>
+<h2>Examples</h2>
+<p><a href="example.jpg" rel="lightbox" title="Example picture">Click here</a> to view a picture inside Easybox.</p>
+<p><a href="http://www.youtube.com/watch?v=XJFmh6W1Jjo" rel="lightbox" title="Example YouTube video">Click here</a> to view a YouTube video inside EasyBox.</p>
+<p><a href="http://vimeo.com/27359051" rel="lightbox" title="Example YouTube video">Click here</a> to view a Vimeo video inside EasyBox.</p>
+<p><a href="http://www.example.com" rel="lightbox" title="Example iFrame">Click here</a> to view an iFrame inside EasyBox.</p>
+<p><a href="#container" rel="lightbox" title="Example inline element">Click here</a> to view an inline element inside EasyBox.</p>
+<h2>Tested browsers</h2>
+<p><ul>
+<li>Firefox 3.5+</li>
+<li>Google Chrome 5+</li>
+<li>Opera 9+</li>
+<li>Internet Explorer 7+</li>
+</ul></p>
+</div>
+<div id="container">
+<h1>EasyBox features</h1>
+<p><ul>
+<li>display images</li>
+<li>display YouTube and Vimeo videos</li>
+<li>display iFrames</li>
+<li>display inline elements</li>
+<li>group elements</li>
+<li>fancy animations</li>
+<li>only 35 KG with CSS and all images</li>
+</ul></p>
+</div>
 </body>
 </html>

@@ -293,7 +293,7 @@
 		Called by change()
 	*/
 	function animateBox() {
-		var d, e;
+		var d, e, o;
 
 		// remove loading animation
 		$(center).removeClass();
@@ -308,6 +308,10 @@
 			} else if ((id = vimeoLink()) != false) {
 				d = limitDim({w: videoWidth, h: videoHeight});
 				e = $("<iframe src=\"http://player.vimeo.com/video/"+id+"?title=0&byline=0&portrait=0&autoplay=true\" width=\""+d.w+"\" height=\""+d.h+"\" frameborder=\"0\"></iframe>");
+			} else if ((id = anchorLink()) != false) {
+				o = $('#'+id)[0];
+				d = limitDim({w: $(o).width(), h: $(o).height()});
+				e = $(o).clone().css({display: "block"});
 			} else {
 				d = limitDim({});
 				e = $("<iframe width=\""+d.w+"\" height=\""+d.h+"\" src=\""+resources[activeIndex][0]+"\" frameborder=\"0\"></iframe>");
@@ -396,14 +400,20 @@
 	
 	/* returns the youtube id if active link is a youtube link */
 	function youtubeLink() {
-		var r = /^http\:\/\/www\.youtube\.com\/watch\?v=([A-Za-z0-9]*)(&(.*))?/i.exec(resources[activeIndex][0]);
+		var r = /^http\:\/\/www\.youtube\.com\/watch\?v=([A-Za-z0-9]*)(&(.*))?$/i.exec(resources[activeIndex][0]);
 		return (r != null) ? r[1] : false;
 	}
 
 	/* returns the vimeo id if active link is a vimeo link */
 	function vimeoLink() {
-		var r = r = /^http\:\/\/vimeo\.com\/([0-9]*)(.*)?/i.exec(resources[activeIndex][0]);
+		var r = /^http\:\/\/vimeo\.com\/([0-9]*)(.*)?$/i.exec(resources[activeIndex][0]);
 		return (r != null) ? r[1] : false;
+	}
+	
+	/* returns the name of an element if active link is an anchor */
+	function anchorLink() {
+		var r = /^(.*)\#([A-Za-z0-9\-_]*)$/i.exec(resources[activeIndex][0]);
+		return ((r != null) && ($('#'+r[2]).length)) ? r[2] : false;
 	}
 	
 	/* limits dimensions */
