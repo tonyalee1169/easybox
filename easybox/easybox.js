@@ -372,8 +372,8 @@
 		imageWidth = imageHeight = 0;
 		videoWidth = videoHeight = 0;
 		$(container).empty();
-		$([center, container, bottom, prevLink, nextLink]).stop(true);
-		$([container, bottomContainer, prevLink, nextLink]).css({display: "none"});
+		$([center, bottom]).stop(true);
+		$([container, bottomContainer, prevLink, nextLink]).stop(true).css({display: "none"});
 	}
 
 	/*
