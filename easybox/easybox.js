@@ -286,8 +286,7 @@
 		Called by change()
 	*/
 	function animateBox() {
-		var cw = 0, ch = 0;
-		//var t = $(window).scrollTop(), h = $(window).height();
+		var cw, ch, e;
 
 		// remove loading animation
 		$(center).removeClass();
@@ -298,41 +297,39 @@
 				ch = (imageHeight > 0) ? imageHeight : options.defHeight;
 				if (ch > options.maxHeight) { cw = Math.round(options.maxHeight*cw/ch); ch = options.maxHeight; }
 				if (cw > options.maxWidth) { ch = Math.round(options.maxWidth/cw*ch); cw = options.maxWidth; }
-				$("<img src=\""+resources[activeIndex][0]+"\" width=\""+cw+"\" height=\""+ch+"\" alt=\""+resources[activeIndex][1]+"\" />").appendTo(container);
+				e = $("<img src=\""+resources[activeIndex][0]+"\" width=\""+cw+"\" height=\""+ch+"\" alt=\""+resources[activeIndex][1]+"\" />");
 			} else if ((id = youtubeLink()) != false) {
 				ch = options.ytPlayerHeight;
 				cw = Math.round(ch*((videoWidescreen) ? (16.0/9.0) : (4.0/3.0)));
-				$("<iframe src=\"http://www.youtube.com/embed/"+id+"?version=3&autohide=1&autoplay=1&rel=0\" width=\""+cw+"\" height=\""+ch+"\" frameborder=\"0\"></iframe>").appendTo(container);
+				e = $("<iframe src=\"http://www.youtube.com/embed/"+id+"?version=3&autohide=1&autoplay=1&rel=0\" width=\""+cw+"\" height=\""+ch+"\" frameborder=\"0\"></iframe>");
 			} else if ((id = vimeoLink()) != false) {
 				cw = (videoWidth > 0) ? videoWidth : options.defWidth;
 				ch = (videoHeight > 0) ? videoHeight : options.defHeight;
 				if (ch > options.maxHeight) { cw = Math.round(options.maxHeight*cw/ch); ch = options.maxHeight; }
 				if (cw > options.maxWidth) { ch = Math.round(options.maxWidth/cw*ch); cw = options.maxWidth; }
-				$("<iframe src=\"http://player.vimeo.com/video/"+id+"?title=0&byline=0&portrait=0&autoplay=true\" width=\""+cw+"\" height=\""+ch+"\" frameborder=\"0\"></iframe>").appendTo(container);
+				e = $("<iframe src=\"http://player.vimeo.com/video/"+id+"?title=0&byline=0&portrait=0&autoplay=true\" width=\""+cw+"\" height=\""+ch+"\" frameborder=\"0\"></iframe>");
 			} else {
 				cw = options.defWidth;
 				ch = options.defHeight;
-				$("<iframe width=\""+cw+"\" height=\""+ch+"\" src=\""+resources[activeIndex][0]+"\"></iframe>").appendTo(container);
+				e = $("<iframe width=\""+cw+"\" height=\""+ch+"\" src=\""+resources[activeIndex][0]+"\"></iframe>");
 			}
 			
 			// retrieve center dimensions
 			$(container).css({visibility: "hidden", display: ""}).width(cw).height(ch);
 			centerWidth = container.offsetWidth;
 			centerHeight = container.offsetHeight;
-
-			// set caption
+			
+			// set caption and number
 			$(caption).html(resources[activeIndex][1] || "");
+			$(number).html((((resources.length > 1) && options.counterText) || "").replace(/{x}/, activeIndex + 1).replace(/{y}/, resources.length));
 		} else {
 			$(center).addClass("easyError");
 			centerWidth = options.initWidth;
 			centerHeight = options.initHeight;
 
-			// clear caption
-			$(caption).html("");
+			// clear caption and number
+			$([caption, number]).html("");
 		}
-
-		// set number
-		$(number).html((((resources.length > 1) && options.counterText) || "").replace(/{x}/, activeIndex + 1).replace(/{y}/, resources.length));
 
 		// resize center
 		if ((center.offsetHeight != centerHeight) || (center.offsetWidth != centerWidth))
@@ -342,7 +339,7 @@
 			$(bottomContainer).css({width: centerWidth, marginLeft: -centerWidth/2, marginTop: centerHeight/2});
 			$(prevLink).css({marginLeft: -centerWidth/2 - Math.floor($(prevLink).width() * 1.5)});
 			$(nextLink).css({marginLeft: centerWidth/2 + Math.ceil($(prevLink).width() * 0.5)});
-			$(container).css({display: "none", visibility: "", opacity: ""}).fadeIn(options.fadeDuration, animateCaption);
+			$(container).append(e).css({display: "none", visibility: "", opacity: ""}).fadeIn(options.fadeDuration, animateCaption);
 		});
 	}
 
@@ -373,7 +370,7 @@
 		videoWidth = videoHeight = 0;
 		$(container).empty();
 		$([center, container, bottom, prevLink, nextLink]).stop(true);
-		$([container, bottomContainer, prevLink, nextLink]).css({display: "none", visibility: "hidden"});
+		$([container, bottomContainer, prevLink, nextLink]).css({display: "none"});
 	}
 
 	/*
