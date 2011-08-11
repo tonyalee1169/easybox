@@ -351,7 +351,7 @@
 		if (nextIndex >= 0) $(nextLink).css({display: "none", visibility: "", opacity: ""}).fadeIn(options.captionFadeDuration);
 
 		// fade in		
-		$(bottomContainer).css({visibility: "", display: ""});
+		$(bottomContainer).fadeIn(options.captionFadeDuration);
 		$(bottom).css("marginTop", -bottom.offsetHeight).animate({marginTop: 0}, options.captionFadeDuration);
 	}
 
