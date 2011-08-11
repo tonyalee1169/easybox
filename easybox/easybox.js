@@ -310,7 +310,7 @@
 				e = $("<iframe src=\"http://player.vimeo.com/video/"+id+"?title=0&byline=0&portrait=0&autoplay=true\" width=\""+d.w+"\" height=\""+d.h+"\" frameborder=\"0\"></iframe>");
 			} else {
 				d = limitDim({});
-				e = $("<iframe width=\""+d.w+"\" height=\""+d.h+"\" src=\""+resources[activeIndex][0]+"\"></iframe>");
+				e = $("<iframe width=\""+d.w+"\" height=\""+d.h+"\" src=\""+resources[activeIndex][0]+"\" frameborder=\"0\"></iframe>");
 			}
 			
 			// retrieve center dimensions
