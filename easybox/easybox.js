@@ -26,9 +26,9 @@
 (function($) {
 	// Global variables
 	var options, resources, activeIndex = -1, prevIndex, nextIndex, centerWidth, centerHeight,
-		hiddenElements = [],
+		hiddenElements = [], slideshowDirection = 0,
 	// loading requisites
-		imageObj = null, ajaxReq = null,
+		imageObj = null, ajaxReq = null, inlineObj = null, inlineParent = null, slideshowInterval = null,
 	// settings
 		imageWidth = 0, imageHeight = 0, videoWidth = 0, videoHeight = 0, videoWidescreen = 0, loadError = false,
 	// DOM elements
@@ -65,8 +65,14 @@
 		Opens easybox with the specified parameters
 	*/
 	$.easybox = function(_resources, startIndex, _options) {
-		if (activeIndex >= 0)
-			return false;
+		var running = false;
+		if (activeIndex >= 0) {
+			// easybox already running
+			stop();
+			activeIndex = prevIndex = nextIndex = -1;
+			slideshowDirection = 0;
+			running = true;
+		}
 
 		// complete options
 		options = $.extend({
@@ -86,6 +92,7 @@
 			maxScreenFill: 0.7,        // content width/height are limited to screen width/height * x; 0 = disabled
 			ytPlayerHeight: 480,       // youtube player height; 720, 480, 360, 240
 			captionFadeDuration: 200,  // caption fade duration
+			slideshow: 0,              // slideshow interval; 0 = disable slideshows
 			counterText: "{x} of {y}", // counter text; {x} replaced with current image number; {y} replaced with total image count
 			closeKeys: [27, 88, 67],   // array of keycodes to close easybox, default: Esc (27), 'x' (88), 'c' (67)
 			previousKeys: [37, 80],    // array of keycodes to navigate to the previous image, default: Left arrow (37), 'p' (80)
@@ -107,17 +114,21 @@
 		// copy resources array and set loop option
 		resources = _resources;
 		options.loop = options.loop && (resources.length > 1);
+		if (!running) {
+			// initializing center
+			centerWidth = options.initWidth;
+			centerHeight = options.initHeight;
+			$(center).css({width: centerWidth, height: centerHeight, marginLeft: -centerWidth/2, marginTop: -centerHeight/2, opacity: ""});
 
-		// initializing center
-		centerWidth = options.initWidth;
-		centerHeight = options.initHeight;
-		$(center).css({width: centerWidth, height: centerHeight, marginLeft: -centerWidth/2, marginTop: -centerHeight/2, opacity: ""});
+			setup(1);
 
-		setup(1);
-		$(center).show();
-		$(overlay).css("opacity", options.overlayOpacity).fadeIn(options.fadeDuration, function() {
+			$(center).show();
+			$(overlay).css("opacity", options.overlayOpacity).fadeIn(options.fadeDuration, function() {
+				change(startIndex);
+			});
+		} else {
 			change(startIndex);
-		});
+		}
 
 		return false;
 	};
@@ -193,6 +204,7 @@
 		Jump to previous resource
 	*/
 	function previous() {
+		slideshowDirection = 1;	// backwards
 		return change(prevIndex);
 	}
 
@@ -200,6 +212,7 @@
 		Jump to next resource
 	*/
 	function next() {
+		slideshowDirection = 0;	// forwards
 		return change(nextIndex);
 	}
 
@@ -293,11 +306,11 @@
 		Called by change()
 	*/
 	function animateBox() {
-		var d, e, o;
+		var d, e;
 
 		// remove loading animation
 		$(center).removeClass();
-		
+
 		if (!loadError) {
 			if (imageLink()) {
 				d = limitDim({w: imageWidth, h: imageHeight});
@@ -309,9 +322,10 @@
 				d = limitDim({w: videoWidth, h: videoHeight});
 				e = $("<iframe src=\"http://player.vimeo.com/video/"+id+"?title=0&byline=0&portrait=0&autoplay=true\" width=\""+d.w+"\" height=\""+d.h+"\" frameborder=\"0\"></iframe>");
 			} else if ((id = anchorLink()) != false) {
-				o = $('#'+id)[0];
-				d = limitDim({w: $(o).width(), h: $(o).height()});
-				e = $(o).clone().css({display: "block"});
+				inlineObj = $('#'+id)[0];
+				inlineParent = $(inlineObj).parent();
+				d = limitDim({w: $(inlineObj).width(), h: $(inlineObj).height()});
+				e = $(inlineObj).css({display: "block"});
 			} else {
 				d = limitDim({});
 				e = $("<iframe width=\""+d.w+"\" height=\""+d.h+"\" src=\""+resources[activeIndex][0]+"\" frameborder=\"0\"></iframe>");
@@ -343,6 +357,8 @@
 			$(prevLink).css({marginLeft: -centerWidth/2 - Math.floor($(prevLink).width() * 1.5)});
 			$(nextLink).css({marginLeft: centerWidth/2 + Math.ceil($(prevLink).width() * 0.5)});
 			$(container).append(e).css({display: "none", visibility: "", opacity: ""}).fadeIn(options.fadeDuration, animateCaption);
+			if ((options.slideshow) && (nextIndex >= 0))
+				slideshowInterval = setInterval((slideshowDirection) ? previous : next, options.slideshow);
 		});
 	}
 
@@ -355,7 +371,7 @@
 		if (nextIndex >= 0) $(nextLink).css({display: "none", visibility: "", opacity: ""}).fadeIn(options.captionFadeDuration);
 
 		// fade in		
-		$(bottomContainer).fadeIn(options.captionFadeDuration);
+		$(bottomContainer).css({opacity: ""}).fadeIn(options.captionFadeDuration);
 		$(bottom).css("marginTop", -bottom.offsetHeight).animate({marginTop: 0}, options.captionFadeDuration);
 	}
 
@@ -368,6 +384,12 @@
 		$(center).removeClass();
 		if (imageObj != null) { imageObj.onload = imageObj.onerror = null; imageObj = null; }
 		if (ajaxReq != null) { ajaxReq.abort(); ajaxReq = null; }		
+		if (slideshowInterval != null) {clearInterval(slideshowInterval); slideshowInterval = null; }
+		if (inlineObj != null) {
+			// put inline object back to it's place
+			$("body").append($(inlineObj).css({display: ""}));
+			inlineObj = inlineParent = null;
+		}
 		videoWidescreen = loadError = false;
 		imageWidth = imageHeight = 0;
 		videoWidth = videoHeight = 0;
@@ -383,6 +405,7 @@
 		if (activeIndex >= 0) {
 			stop();
 			activeIndex = prevIndex = nextIndex = -1;
+			slideshowDirection = 0;
 			// resize center
 			$(overlay).stop().fadeOut(options.fadeDuration, setup);
 			$(center).animate({height: options.closeHeight, marginTop: -options.closeHeight/2, width: options.closeWidth, marginLeft: -options.closeWidth/2, opacity: 0}, options.fadeDuration, function() {

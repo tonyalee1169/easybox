@@ -14,9 +14,15 @@ body { background-color: #f0f0f0; font-family: arial, helvetica, sans-serif; fon
 #container1 { display: none; width: 320px; height: 240px; }
 #container2 { display: none; width: 320px; height: 160px; }
 #container3 { display: none; width: 540px; height: 140px; }
-#container1 h1, #container2 h1, #container3 h1 { margin-top: 0px; font-size: 18pt; }
+#container4 { display: none; width: 520px; height: 180px; }
+#container1 h1, #container2 h1, #container3 h1, #container4 h1 { margin-top: 0px; font-size: 18pt; }
 a { font-weight: bold; color: #E00020; text-decoration: none; }
 </style>
+<script type="text/javascript">
+$(function() {
+	$("a#testalert").click(function() { alert("test"); });
+});
+</script>
 </head>
 <body>
 <div id="wrapper">
@@ -31,7 +37,9 @@ a { font-weight: bold; color: #E00020; text-decoration: none; }
 <p><a href="http://www.youtube.com/watch?v=XJFmh6W1Jjo" rel="lightbox" title="Example YouTube video">Click here</a> to view a YouTube video inside EasyBox.</p>
 <p><a href="http://vimeo.com/27359051" rel="lightbox" title="Example YouTube video">Click here</a> to view a Vimeo video inside EasyBox.</p>
 <p><a href="http://www.example.com" rel="lightbox" title="Example iFrame">Click here</a> to view an iFrame inside EasyBox.</p>
+<p><a href="#container4" rel="lightbox" title="EasyBox inside EasyBox">Click here</a> to test EasyBox inside EasyBox.</p>
 <p><a href="#container1" rel="lightbox-container" title="EasyBox features">Click here</a>, <a href="#container2" rel="lightbox-container" title="Tested browsers">here</a> and <a href="#container3" rel="lightbox-container" title="What makes EasyBox different?">here</a> to view an inline element inside EasyBox.</p>
+<p><a href="#container4" rel="lightbox" title="EasyBox inside EasyBox">Click here</a> to test EasyBox inside EasyBox.</p>
 </div>
 <div id="container1">
 <h1>EasyBox features</h1>
@@ -61,6 +69,12 @@ a { font-weight: bold; color: #E00020; text-decoration: none; }
 <li>displays an error message if the link is not found</li>
 <li>shrinks content to screen size</li>
 </ul></p>
+</div>
+<div id="container4">
+<p><a href="example.jpg" rel="lightbox" title="Example picture">Click here</a> to view a picture inside Easybox.</p>
+<p><a href="http://www.youtube.com/watch?v=XJFmh6W1Jjo" rel="lightbox" title="Example YouTube video">Click here</a> to view a YouTube video inside EasyBox.</p>
+<p><a href="http://vimeo.com/27359051" rel="lightbox" title="Example YouTube video">Click here</a> to view a Vimeo video inside EasyBox.</p>
+<p><a href="http://www.example.com" rel="lightbox" title="Example iFrame">Click here</a> to view an iFrame inside EasyBox.</p>
 </div>
 </body>
 </html>
