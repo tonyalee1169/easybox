@@ -101,14 +101,11 @@
 		}, _options);
 		
 		// check for dynamic options inside html
-		if (options.dynOpts) {
-			$('#easyOptions').children().each(function(index, c) {
-				var o = this;
-				if ((!$(o).attr('data-rel')) || ((typeof rel == 'string') && ($(o).attr('data-rel') == rel))) {
-					$.each(options, function(key, val) {
-						if ($(o).attr('data-'+key))
-							options[key] = eval($(o).attr('data-'+key));
-					});
+		if ((options.dynOpts) && ($('#easyOptions').length)) {
+			var o = $.parseJSON($('#easyOptions').html());
+			$.each(o, function(key, val) {
+				if ((key == 'global') || ((typeof rel == 'string') && (key == rel))) {
+					options = $.extend(options, val);
 				}
 			});
 		}

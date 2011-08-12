@@ -26,7 +26,7 @@ THE SOFTWARE.
 Project homepage:
 http://code.google.com/p/easybox/
 
-Easybox requires the jQuery library (version 1.3 or more recent) to be installed on your website in order to work properly.
+Easybox requires the jQuery library (version 1.6 or more recent) to be installed on your website in order to work properly.
 
 You can remove or customize the provided autoload code block by editing the easybox.min.js file. By default, it behaves like the original LightBox.
 When deploying easybox.js, you MUST always preserve the copyright notice at the beginning of the file.
