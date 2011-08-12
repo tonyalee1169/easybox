@@ -28,7 +28,7 @@
 	var options, resources, activeIndex = -1, prevIndex, nextIndex, centerWidth, centerHeight,
 		hiddenElements = [], slideshowDirection = 0,
 	// loading requisites
-		imageObj = null, ajaxReq = null, inlineObj = null, inlineParent = null, slideshowInterval = null,
+		imageObj = null, ajaxReq = null, inlineObj = null, inlineParent = null, slideshowInterval = null, closeInterval = null,
 	// settings
 		imageWidth = 0, imageHeight = 0, videoWidth = 0, videoHeight = 0, videoWidescreen = 0, loadError = false,
 	// DOM elements
@@ -94,6 +94,7 @@
 			ytPlayerHeight: 480,       // youtube player height; 720, 480, 360, 240
 			captionFadeDuration: 200,  // caption fade duration
 			slideshow: 0,              // slideshow interval; 0 = disable slideshows
+			autoClose: 0,              // close after x milliseconds; 0 = disable autoClose
 			counterText: "{x} of {y}", // counter text; {x} replaced with current image number; {y} replaced with total image count
 			closeKeys: [27, 88, 67],   // array of keycodes to close easybox, default: Esc (27), 'x' (88), 'c' (67)
 			previousKeys: [37, 80],    // array of keycodes to navigate to the previous image, default: Left arrow (37), 'p' (80)
@@ -371,6 +372,8 @@
 			$(container).append(e).css({display: "none", visibility: "", opacity: ""}).fadeIn(options.fadeDuration, animateCaption);
 			if ((options.slideshow) && (nextIndex >= 0))
 				slideshowInterval = setInterval((slideshowDirection) ? previous : next, options.slideshow);
+			if (options.autoClose)
+				closeInterval = setInterval(close, options.autoClose);
 		});
 	}
 
@@ -397,6 +400,7 @@
 		if (imageObj != null) { imageObj.onload = imageObj.onerror = null; imageObj = null; }
 		if (ajaxReq != null) { ajaxReq.abort(); ajaxReq = null; }		
 		if (slideshowInterval != null) {clearInterval(slideshowInterval); slideshowInterval = null; }
+		if (closeInterval != null) {clearInterval(closeInterval); closeInterval = null; }
 		if (inlineObj != null) {
 			// put inline object back to it's place
 			$("body").append($(inlineObj).css({display: ""}));
