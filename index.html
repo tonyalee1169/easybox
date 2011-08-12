@@ -21,17 +21,6 @@ a { font-weight: bold; color: #E00020; text-decoration: none; }
 </style>
 </head>
 <body>
-<div id="easyOptions">
-{
-	"global": {
-		"autoClose": 10000,
-		"overlayOpacity": 0.7
-	},
-	"lightbox-slide": {
-		"autoClose": 0
-	}
-}
-</div>
 <div id="wrapper">
 <h1>Easybox example page</h1>
 <p>EasyBox is a lightbox clone based on the light-weight Slimbox2 script. It offers a variety of additional features such as:</p>
@@ -94,5 +83,17 @@ a { font-weight: bold; color: #E00020; text-decoration: none; }
 <p><a href="http://vimeo.com/27359051" rel="lightbox" title="Example YouTube video">Click here</a> to view a Vimeo video inside EasyBox.</p>
 <p><a href="http://www.example.com" rel="lightbox" title="Example iFrame">Click here</a> to view an iFrame inside EasyBox.</p>
 </div>
+<script type="application/json" id="easyOptions">
+{
+	"global": {
+		"autoClose": 10000,
+		"overlayOpacity": 0.7
+	},
+	"lightbox-slide": {
+		"slideshow": 10000,
+		"autoClose": 0
+	}
+}
+</script>
 </body>
 </html>
