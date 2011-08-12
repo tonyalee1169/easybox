@@ -102,12 +102,12 @@
 		
 		// check for dynamic options inside html
 		if (options.dynOpts) {
-			$('#easyOptions').each(function(index, c) {
+			$('#easyOptions').children().each(function(index, c) {
 				var o = this;
 				if ((!$(o).attr('data-rel')) || ((typeof rel == 'string') && ($(o).attr('data-rel') == rel))) {
 					$.each(options, function(key, val) {
 						if ($(o).attr('data-'+key))
-							options[key] = $(o).attr('data-'+key);
+							options[key] = eval($(o).attr('data-'+key));
 					});
 				}
 			});
