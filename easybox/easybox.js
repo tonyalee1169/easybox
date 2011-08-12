@@ -23,17 +23,6 @@
 	THE SOFTWARE.
 */
 
-// AUTOLOAD CODE BLOCK (MAY BE CHANGED OR REMOVED)
-if (!/android|iphone|ipod|series60|symbian|windows ce|blackberry|msie 6/i.test(navigator.userAgent)) {
-	jQuery(function($) {
-		$("a[rel^='lightbox']").easybox({/* Put custom options here */}, null, function(el) {
-			return (this == el) || ((this.rel.length > 8) && (this.rel == el.rel));
-		});
-		$("a[rel^='slideshow']").easybox({slideshow: 5000}, null, function(el) {
-			return (this == el) || ((this.rel.length > 9) && (this.rel == el.rel));
-		});
-	});
-}
 (function($) {
 	// Global variables
 	var options, resources, activeIndex = -1, prevIndex, nextIndex, centerWidth, centerHeight,
@@ -75,7 +64,7 @@ if (!/android|iphone|ipod|series60|symbian|windows ce|blackberry|msie 6/i.test(n
 		API
 		Opens easybox with the specified parameters
 	*/
-	$.easybox = function(_resources, startIndex, _options) {
+	$.easybox = function(_resources, startIndex, _options, rel) {
 		var running = false;
 		if (activeIndex >= 0) {
 			// easybox already running
@@ -88,6 +77,7 @@ if (!/android|iphone|ipod|series60|symbian|windows ce|blackberry|msie 6/i.test(n
 		// complete options
 		options = $.extend({
 			loop: false,               // navigate between first and last image
+			dynOpts: true,            // checks for a <div id="prefix-options">
 			overlayOpacity: 0.8,       // opacity of the overlay from 0 to 1
 			resizeDuration: 400,       // box resize duration
 			resizeEasing: 'easybox',   // resize easing method; 'swing' = default
@@ -109,6 +99,19 @@ if (!/android|iphone|ipod|series60|symbian|windows ce|blackberry|msie 6/i.test(n
 			previousKeys: [37, 80],    // array of keycodes to navigate to the previous image, default: Left arrow (37), 'p' (80)
 			nextKeys: [39, 78]         // array of keycodes to navigate to the next image, default: Right arrow (39), 'n' (78)
 		}, _options);
+		
+		// check for dynamic options inside html
+		if (options.dynOpts) {
+			$('#easyOptions').each(function(index, c) {
+				var o = this;
+				if ((!$(o).attr('data-rel')) || ((typeof rel == 'string') && ($(o).attr('data-rel') == rel))) {
+					$.each(options, function(key, val) {
+						if ($(o).attr('data-'+key))
+							options[key] = $(o).attr('data-'+key);
+					});
+				}
+			});
+		}
 
 		// The function is called for a single image, with URL and Title as first two arguments
 		if (typeof _resources == "string") {
@@ -151,18 +154,19 @@ if (!/android|iphone|ipod|series60|symbian|windows ce|blackberry|msie 6/i.test(n
 		linksFilter: Optional function taking a link DOM element and an index as arguments and returning true if the element is part of
 		             the image collection that will be shown on click, false if not. "this" refers to the element that was clicked.
 		             This function must always return true when the DOM element argument is "this".
+		             This function must not return true when the rel tags of the DOM element and *this* are not equal.
+		rel:         EasyBox looks for this in #easyOptions tags
 	*/
 	$.fn.easybox = function(_options, linkMapper, linksFilter) {
 		linkMapper = linkMapper || function(el) {
 			return [el.href, el.title];
 		};
 
-		linksFilter = linksFilter || function() {
-			return true;
+		linksFilter = linksFilter || function(el) {
+			return (this == el);
 		};
 
 		var links = this;
-
 		return links.unbind("click").click(function() {
 			// Build the list of resources that will be displayed
 			var link = this, startIndex = 0, filteredLinks, i = 0, length;
@@ -175,7 +179,7 @@ if (!/android|iphone|ipod|series60|symbian|windows ce|blackberry|msie 6/i.test(n
 				if (filteredLinks[i] == link) startIndex = i;
 				filteredLinks[i] = linkMapper(filteredLinks[i], i);
 			}
-			return $.easybox(filteredLinks, startIndex, _options);
+			return $.easybox(filteredLinks, startIndex, _options, $(link).attr('rel') || null);
 		});
 	};
 

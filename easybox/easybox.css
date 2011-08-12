@@ -108,3 +108,7 @@
 #easyCaption {
 	font-weight: bold;
 }
+
+#easyOptions {
+	display: none;
+	}
