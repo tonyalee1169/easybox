@@ -470,7 +470,7 @@
 	
 	/* returns the youtube id if active link is a youtube link */
 	function youtubeLink() {
-		var r = /^http\:\/\/www\.youtube\.com\/watch\?v=([A-Za-z0-9]*)(&(.*))?$/i.exec(resources[activeIndex][0]);
+		var r = /^http\:\/\/www\.youtube\.com\/watch\?v=([A-Za-z0-9\-_]*)(&(.*))?$/i.exec(resources[activeIndex][0]);
 		return (r != null) ? r[1] : false;
 	}
 
