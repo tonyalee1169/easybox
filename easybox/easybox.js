@@ -26,13 +26,15 @@
 (function($) {
 	// Global variables
 	var options, resources, activeIndex = -1, prevIndex, nextIndex, centerWidth, centerHeight,
-		hiddenElements = [], slideshowDirection = 0,
+		hiddenElements = [], slideshowDirection = false, slideshowOff = false,
+	// drag and drop vars
+		dragging = false, dragOffX = 0, dragOffY = 0,
 	// loading requisites
 		imageObj = null, ajaxReq = null, inlineObj = null, inlineParent = null, slideshowInterval = null, closeInterval = null,
 	// settings
 		imageWidth = 0, imageHeight = 0, videoWidth = 0, videoHeight = 0, videoWidescreen = 0, loadError = false,
 	// DOM elements
-		overlay, center, container, prevLink, nextLink, bottomContainer, bottom, caption, number;
+		overlay, center, container, prevLink, nextLink, slideLink, bottomContainer, bottom, caption, number;
 
 	/*
 		Initialization
@@ -41,7 +43,7 @@
 		// append the easybox HTML code at the bottom of the document
 		$("body").append(
 			$([
-				overlay = $('<div id="easyOverlay" />')[0],
+				overlay = $('<div id="easyOverlay" />').click(close)[0],
 				center = $('<div id="easyCenter" />').append([
 					container = $('<div id="easyContainer" />')[0]
 				])[0],
@@ -49,7 +51,8 @@
 				nextLink = $('<a id="easyNextLink" href="#" />').click(next)[0],
 				bottomContainer = $('<div id="easyBottomContainer" />').append([
 					bottom = $('<div id="easyBottom" />').append([
-						$('<a id="easyCloseLink" href="#" />').add(overlay).click(close)[0],
+						$('<a id="easyCloseLink" href="#" />').click(close)[0],
+						slideLink = $('<a id="easySlideLink" href="#" />').click(toggleSlide)[0],
 						caption = $('<div id="easyCaption" />')[0],
 						number = $('<div id="easyNumber" />')[0],
 						$('<div style="clear: both;" />')[0]
@@ -57,6 +60,8 @@
 				])[0]
 			]).css("display", "none")
 		);
+		
+		$([center, bottomContainer, prevLink, nextLink]).mousedown(dragStart).mousemove(dragMove).mouseup(dragStop);
 	});
 
 
@@ -70,7 +75,7 @@
 			// easybox already running
 			stop();
 			activeIndex = prevIndex = nextIndex = -1;
-			slideshowDirection = 0;
+			slideshowDirection = slideshowOff = false;
 			running = true;
 		}
 
@@ -78,6 +83,7 @@
 		options = $.extend({
 			loop: false,               // navigate between first and last image
 			dynOpts: true,            // checks for a <div id="prefix-options">
+			dragDrop: true,
 			overlayOpacity: 0.8,       // opacity of the overlay from 0 to 1
 			resizeDuration: 400,       // box resize duration
 			resizeEasing: 'easybox',   // resize easing method; 'swing' = default
@@ -126,6 +132,10 @@
 		// copy resources array and set loop option
 		resources = _resources;
 		options.loop = options.loop && (resources.length > 1);
+		
+		// show slideshow button if slideshow
+		$(slideLink).css({display: (((options.slideshow) && (resources.length > 1)) ? '' : 'none')})
+
 		if (!running) {
 			// initializing center
 			centerWidth = options.initWidth;
@@ -217,7 +227,7 @@
 		Jump to previous resource
 	*/
 	function previous() {
-		slideshowDirection = 1;	// backwards
+		slideshowDirection = true;	// backwards
 		return change(prevIndex);
 	}
 
@@ -225,7 +235,7 @@
 		Jump to next resource
 	*/
 	function next() {
-		slideshowDirection = 0;	// forwards
+		slideshowDirection = false;	// forwards
 		return change(nextIndex);
 	}
 
@@ -370,7 +380,7 @@
 			$(prevLink).css({marginLeft: -centerWidth/2 - Math.floor($(prevLink).width() * 1.5)});
 			$(nextLink).css({marginLeft: centerWidth/2 + Math.ceil($(prevLink).width() * 0.5)});
 			$(container).append(e).css({display: "none", visibility: "", opacity: ""}).fadeIn(options.fadeDuration, animateCaption);
-			if ((options.slideshow) && (nextIndex >= 0))
+			if ((options.slideshow) && (nextIndex >= 0) && (slideshowInterval == null))
 				slideshowInterval = setInterval((slideshowDirection) ? previous : next, options.slideshow);
 			if (options.autoClose)
 				closeInterval = setInterval(close, options.autoClose);
@@ -388,6 +398,10 @@
 		// fade in		
 		$(bottomContainer).css({opacity: ""}).fadeIn(options.captionFadeDuration);
 		$(bottom).css("marginTop", -bottom.offsetHeight).animate({marginTop: 0}, options.captionFadeDuration);
+	}
+	
+	function position(x, y) {
+		$([center, bottomContainer, prevLink, nextLink]).css({left: x+'px', top: y+'px'});
 	}
 
 	/*
@@ -413,6 +427,20 @@
 		$([center, bottom]).stop(true);
 		$([container, bottomContainer, prevLink, nextLink]).stop(true).css({display: "none"});
 	}
+	
+	function toggleSlide() {
+		slideshowOff = (!slideshowOff);
+		slideshowDirection = false;
+		$(slideLink).toggleClass('disabled', slideshowOff);
+		if (!slideshowOff) {
+			if ((options.slideshow) && (nextIndex >= 0) && (slideshowInterval == null))
+				slideshowInterval = setInterval((slideshowDirection) ? previous : next, options.slideshow);
+		} else {
+			if (slideshowInterval != null) {clearInterval(slideshowInterval); slideshowInterval = null; }
+		}
+
+		return false;
+	}
 
 	/*
 		Closes the box
@@ -421,10 +449,13 @@
 		if (activeIndex >= 0) {
 			stop();
 			activeIndex = prevIndex = nextIndex = -1;
-			slideshowDirection = 0;
+			slideshowDirection = slideshowOff = false;
+			
 			// resize center
 			$(overlay).stop().fadeOut(options.fadeDuration, setup);
 			$(center).animate({height: options.closeHeight, marginTop: -options.closeHeight/2, width: options.closeWidth, marginLeft: -options.closeWidth/2, opacity: 0}, options.fadeDuration, function() {
+				dragging = false;
+				$([center, bottomContainer, prevLink, nextLink]).css({left: '', top: ''});
 				$(center).hide();
 			});
 		}
@@ -466,6 +497,28 @@
 		if (d.w > options.maxWidth) { d.h = Math.round(options.maxWidth/d.w*d.h); d.w = options.maxWidth; }
 		
 		return d;
+	}
+	
+	/*
+		Drag and drop functions
+	*/
+	function dragStart(e) {
+		if (options.dragDrop) {
+			dragging = true;
+			dragOffX = e.pageX - $(this).position().left;
+			dragOffY = e.pageY - $(this).position().top;
+			return false;
+		}
+	}
+	
+	function dragMove(e) {
+		if ((options.dragDrop) && (dragging))
+			position(e.pageX - $(window).scrollLeft() - dragOffX,
+			         e.pageY - $(window).scrollTop() - dragOffY);
+	}
+	
+	function dragStop(e) {
+		dragging = false;
 	}
 	
 	/* easing function with a little bounce effect */
