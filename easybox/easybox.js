@@ -61,7 +61,7 @@
 			]).css("display", "none")
 		);
 		
-		$([center, bottomContainer, prevLink, nextLink]).mousedown(dragStart).mousemove(dragMove).mouseup(dragStop);
+		$([center, bottomContainer, prevLink, nextLink]).mousedown(dragStart).mousemove(dragMove).mouseup(dragStop).mouseleave(dragStop);
 	});
 
 
@@ -454,7 +454,7 @@
 			// resize center
 			$(overlay).stop().fadeOut(options.fadeDuration, setup);
 			$(center).animate({height: options.closeHeight, marginTop: -options.closeHeight/2, width: options.closeWidth, marginLeft: -options.closeWidth/2, opacity: 0}, options.fadeDuration, function() {
-				dragging = false;
+				dragStop();
 				$([center, bottomContainer, prevLink, nextLink]).css({left: '', top: ''});
 				$(center).hide();
 			});
@@ -505,6 +505,7 @@
 	function dragStart(e) {
 		if (options.dragDrop) {
 			dragging = true;
+			$([center, bottomContainer, prevLink, nextLink]).css({cursor: 'pointer'});
 			dragOffX = e.pageX - $(this).position().left;
 			dragOffY = e.pageY - $(this).position().top;
 			return false;
@@ -518,7 +519,10 @@
 	}
 	
 	function dragStop(e) {
-		dragging = false;
+		if (dragging) {
+			dragging = false;
+			$([center, bottomContainer, prevLink, nextLink]).css({cursor: ''});
+		}
 	}
 	
 	/* easing function with a little bounce effect */
