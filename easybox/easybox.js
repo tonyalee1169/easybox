@@ -391,7 +391,7 @@
 			if (e != null)
 				$(e).css({display: 'block'}).appendTo(container);
 			$(container).fadeIn(options.fadeDuration, animateCaption);
-			if ((options.slideshow) && (nextIndex >= 0) && (slideshowInterval == null))
+			if ((options.slideshow) && (nextIndex >= 0) && (!slideshowOff) && (slideshowInterval == null))
 				slideshowInterval = setInterval((slideshowDirection) ? previous : next, options.slideshow);
 			if (options.autoClose)
 				closeInterval = setInterval(close, options.autoClose);
