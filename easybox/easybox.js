@@ -197,7 +197,7 @@
 	*/
 	function setup(open) {
 		if (open) {
-			$("object").add("embed").each(function(index, el) {
+			$("object:visible").add("embed").each(function(index, el) {
 				hiddenElements[index] = [el, el.style.visibility];
 				el.style.visibility = "hidden";
 			});
@@ -329,7 +329,8 @@
 		Called by change()
 	*/
 	function animateBox() {
-		var d, e;
+		var d, // dimensions
+			e; // embedded element
 
 		// remove loading animation
 		$(center).removeClass();
@@ -348,7 +349,7 @@
 				inlineObj = $('#'+id)[0];
 				inlineParent = $(inlineObj).parent();
 				d = limitDim({w: $(inlineObj).width(), h: $(inlineObj).height()});
-				e = $(inlineObj).css({display: "block"});
+				e = $(inlineObj);
 			} else {
 				d = limitDim({});
 				e = $("<iframe width=\""+d.w+"\" height=\""+d.h+"\" src=\""+resources[activeIndex][0]+"\" frameborder=\"0\"></iframe>");
@@ -366,6 +367,9 @@
 			$(center).addClass("easyError");
 			centerWidth = options.initWidth;
 			centerHeight = options.initHeight;
+			
+			// no contents
+			e = null;
 
 			// clear caption and number
 			$([caption, number]).html("");
@@ -375,11 +379,18 @@
 		if ((center.offsetHeight != centerHeight) || (center.offsetWidth != centerWidth))
 			$(center).animate({height: centerHeight, marginTop: -centerHeight/2, width: centerWidth, marginLeft: -centerWidth/2}, options.resizeDuration, options.resizeEasing);
 
+		// gets executed after animation effect
 		$(center).queue(function() {
+			// position and sizing
 			$(bottomContainer).css({width: centerWidth, marginLeft: -centerWidth/2, marginTop: centerHeight/2});
 			$(prevLink).css({marginLeft: -centerWidth/2 - Math.floor($(prevLink).width() * 1.5)});
 			$(nextLink).css({marginLeft: centerWidth/2 + Math.ceil($(prevLink).width() * 0.5)});
-			$(container).append(e).css({display: "none", visibility: "", opacity: ""}).fadeIn(options.fadeDuration, animateCaption);
+
+			// append contents and fade in
+			$(container).css({display: "none", visibility: "", opacity: ""});
+			if (e != null)
+				$(e).css({display: 'block'}).appendTo(container);
+			$(container).fadeIn(options.fadeDuration, animateCaption);
 			if ((options.slideshow) && (nextIndex >= 0) && (slideshowInterval == null))
 				slideshowInterval = setInterval((slideshowDirection) ? previous : next, options.slideshow);
 			if (options.autoClose)
@@ -417,7 +428,7 @@
 		if (closeInterval != null) {clearInterval(closeInterval); closeInterval = null; }
 		if (inlineObj != null) {
 			// put inline object back to it's place
-			$("body").append($(inlineObj).css({display: ""}));
+			$(inlineParent).append($(inlineObj).css({display: ""}));
 			inlineObj = inlineParent = null;
 		}
 		videoWidescreen = loadError = false;
