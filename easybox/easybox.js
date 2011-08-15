@@ -82,6 +82,7 @@
 		// complete options
 		options = $.extend({
 			loop: false,                  // navigate between first and last image
+			loopVideos: false,             // loop videos
 			dynOpts: true,                // checks for a <div id="prefix-options">
 			dragDrop: true,               // enable window drag and drop
 			overlayOpacity: 0.8,          // opacity of the overlay from 0 to 1
@@ -132,6 +133,7 @@
 
 		// copy resources array and set loop option
 		resources = _resources;
+		options.loop = ((options.loop) && (resources.length > 1));
 		options.slideshow = ((options.slideshow) && (resources.length > 1)) ? options.slideshow : 0;
 		
 		// show slideshow button if slideshow
@@ -246,12 +248,8 @@
 	function change(index) {
 		if (index >= 0) {
 			activeIndex = index;
-			if (resources.length > 1) {
-				prevIndex = (activeIndex || (options.loop ? resources.length : 0)) - 1;
-				nextIndex = ((activeIndex + 1) % resources.length) || (options.loop ? 0 : -1);
-			} else {
-				prevIndex = nextIndex = -1;
-			}
+			prevIndex = (activeIndex || (options.loop ? resources.length : 0)) - 1;
+			nextIndex = ((activeIndex + 1) % resources.length) || (options.loop ? 0 : -1);
 			
 			// reset everything
 			stop();
@@ -292,14 +290,14 @@
 				var p = '?version=3&autohide=1&autoplay=1&rel=0'; // params
 				if ((options.ytPlayerTheme) && ((r = /^([a-z]*),([a-z]*)$/.exec(options.ytPlayerTheme)) != null))
 					p += '&theme='+r[1]+'&color='+r[2];
-				if ((options.loop) && (resources.length <= 1))
+				if (options.loopVideos)
 					p += '&loop=1&playlist='+id; // youtube glitch; needs playlist for loop
 				d = limitDim({w: Math.round(options.ytPlayerHeight*((videoWidescreen) ? (16.0/9.0) : (4.0/3.0))), h: options.ytPlayerHeight});
 				e = $("<iframe src=\"http://www.youtube.com/embed/"+id+p+"\" width=\""+d.w+"\" height=\""+d.h+"\" frameborder=\"0\"></iframe>");
 			} else if ((id = vimeoLink()) != false) {
 				var p = '?title=0&byline=0&portrait=0&autoplay=true';
 				d = limitDim({w: videoWidth, h: videoHeight});
-				if ((options.loop) && (resources.length <= 1))
+				if (options.loopVideos)
 					p += '&loop=true';
 				e = $("<iframe src=\"http://player.vimeo.com/video/"+id+p+"\" width=\""+d.w+"\" height=\""+d.h+"\" frameborder=\"0\"></iframe>");
 			} else if ((id = anchorLink()) != false) {
