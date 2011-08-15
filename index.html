@@ -26,8 +26,8 @@ ul#gallery li img { display: block; padding: 0; margin: 0; }
 </style>
 <script type="text/javascript">
 (function($) {
-	var s, opts, dragdrop, opacity, resize, fade, caption;
-	var overlayLink, resizeLink, fadeLink, captionLink, dragdropLink;
+	var s, opts, dragdrop, opacity, resize, easing, fade, caption;
+	var overlayLink, resizeLink, easingLink, fadeLink, captionLink, dragdropLink;
 	
 	$(function() {
 		opts = $('<script type="application/json" id="easyOptions" />').appendTo("body")[0];
@@ -36,6 +36,7 @@ ul#gallery li img { display: block; padding: 0; margin: 0; }
 		$("#ebeffects").append(
 				overlayLink = $('<a href="#" title="overlay opacity" />').click(overlayBtn)[0],
 				resizeLink = $('<a href="#" title="resize duration" />').click(resizeBtn)[0],
+				easingLink = $('<a href="#" title="resize easing function" />').click(easingBtn)[0],
 				fadeLink = $('<a href="#" title="fade duration" />').click(fadeBtn)[0],
 				captionLink = $('<a href="#" title="caption fade duration" />').click(captionBtn)[0],
 				dragdropLink = $('<a href="#" title="drag and drop support" />').click(dragdropBtn)[0]
@@ -43,6 +44,7 @@ ul#gallery li img { display: block; padding: 0; margin: 0; }
 		
 		overlayBtn();
 		resizeBtn();
+		easingBtn();
 		fadeBtn();
 		captionBtn();
 		dragdropBtn();
@@ -50,14 +52,14 @@ ul#gallery li img { display: block; padding: 0; margin: 0; }
 	});
 	
 	function compile() {
-		$(opts).html('{"global":{"overlayOpacity": '+opacity+', "resizeDuration": '+resize+', "fadeDuration": '+fade+', "captionFadeDuration": '+caption+', "dragDrop": '+dragdrop+'}'+s+'}');
+		$(opts).html('{"global":{"overlayOpacity": '+opacity+', "resizeDuration": '+resize+', "resizeEasing": "'+easing+'", "fadeDuration": '+fade+', "captionFadeDuration": '+caption+', "dragDrop": '+dragdrop+'}'+s+'}');
 	}
 	
 	function overlayBtn() {
 		if (typeof opacity == 'undefined') opacity = 0.8;
 		else if (opacity<1) opacity+=0.2;
 		else opacity=0.2;
-		$(overlayLink).html("Overlay opacity: "+opacity.toFixed(1));
+		$(overlayLink).html("overlay opacity: "+opacity.toFixed(1));
 		compile();
 		return false;
 	}
@@ -65,7 +67,15 @@ ul#gallery li img { display: block; padding: 0; margin: 0; }
 		if (typeof resize == 'undefined') resize = 400;
 		else if (resize<2000) resize+=100;
 		else resize=100;
-		$(resizeLink).html("Resize duration: "+resize);
+		$(resizeLink).html("resize duration: "+resize);
+		compile();
+		return false;
+	}
+	function easingBtn() {
+		if (typeof easing == 'undefined') easing = 'easybox';
+		else if (easing=='easybox') easing='swing';
+		else easing='easybox';
+		$(easingLink).html("resize easing function: "+easing);
 		compile();
 		return false;
 	}
@@ -119,7 +129,12 @@ ul#gallery li img { display: block; padding: 0; margin: 0; }
 <p><a href="http://www.youtube.com/watch?v=XJFmh6W1Jjo" rel="lightbox" title="Example YouTube video">Click here</a> to view a YouTube video inside EasyBox.</p>
 <p><a href="http://vimeo.com/27359051" rel="lightbox-vimeo1" title="Example Vimeo video">Click here</a> to view a Vimeo video inside EasyBox.</p>
 <p><a href="http://www.example.com" rel="lightbox" title="Example iFrame">Click here</a> to view an iFrame inside EasyBox.</p>
-<p><a href="#container1" rel="lightbox-slide" title="EasyBox features">Click here</a>, <a href="#container2" rel="lightbox-slide" title="Tested browsers">here</a>, <a href="#container3" rel="lightbox-slide" title="What makes EasyBox different?">here</a> and <a href="#container4" rel="lightbox-slide" title="Credits">here</a> to view an inline element inside EasyBox.</p>
+<p><a href="#container1" rel="lightbox-slide" title="EasyBox features">Click here</a> to view an inline element inside EasyBox.</p>
+<div style="display: none">
+<a href="#container2" rel="lightbox-slide" title="Tested browsers"></a>
+<a href="#container3" rel="lightbox-slide" title="What makes EasyBox different?"></a>
+<a href="#container4" rel="lightbox-slide" title="Credits"></a>
+</div>
 <p><a href="#container5" rel="lightbox" title="EasyBox inside EasyBox">Click here</a> to test EasyBox inside EasyBox.</p>
 </div>
 <div id="container1">
