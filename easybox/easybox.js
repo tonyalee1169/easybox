@@ -84,27 +84,28 @@
 			loop: false,               // navigate between first and last image
 			dynOpts: true,            // checks for a <div id="prefix-options">
 			dragDrop: true,
-			overlayOpacity: 0.8,       // opacity of the overlay from 0 to 1
-			resizeDuration: 400,       // box resize duration
-			resizeEasing: 'easybox',   // resize easing method; 'swing' = default
-			fadeDuration: 400,         // image fade-in duration
-			initWidth: 250,            // width of the box in initial or error state
-			initHeight: 250,           // height of the box in initial or error state
-			defWidth: 960,             // default content width
-			defHeight: 720,            // default content height
-			closeWidth: 128,           // width the box fades to when closing
-			closeHeight: 128,          // height the box fades to when closing
-			maxWidth: 1280,            // maximum content width
-			maxHeight: 720,            // maximum content height
-			maxScreenFill: 0.7,        // content width/height are limited to screen width/height * x; 0 = disabled
-			ytPlayerHeight: 480,       // youtube player height; 720, 480, 360, 240
-			captionFadeDuration: 200,  // caption fade duration
-			slideshow: 0,              // slideshow interval; 0 = disable slideshows
-			autoClose: 0,              // close after x milliseconds; 0 = disable autoClose
-			counterText: "{x} of {y}", // counter text; {x} replaced with current image number; {y} replaced with total image count
-			closeKeys: [27, 88, 67],   // array of keycodes to close easybox, default: Esc (27), 'x' (88), 'c' (67)
-			previousKeys: [37, 80],    // array of keycodes to navigate to the previous image, default: Left arrow (37), 'p' (80)
-			nextKeys: [39, 78]         // array of keycodes to navigate to the next image, default: Right arrow (39), 'n' (78)
+			overlayOpacity: 0.8,          // opacity of the overlay from 0 to 1
+			resizeDuration: 400,          // box resize duration
+			resizeEasing: 'easybox',      // resize easing method; 'swing' = default
+			fadeDuration: 400,            // image fade-in duration
+			initWidth: 250,               // width of the box in initial or error state
+			initHeight: 250,              // height of the box in initial or error state
+			defWidth: 960,                // default content width
+			defHeight: 720,               // default content height
+			closeWidth: 128,              // width the box fades to when closing
+			closeHeight: 128,             // height the box fades to when closing
+			maxWidth: 1280,               // maximum content width
+			maxHeight: 720,               // maximum content height
+			maxScreenFill: 0.7,           // content width/height are limited to screen width/height * x; 0 = disabled
+			ytPlayerHeight: 480,          // youtube player height; 720, 480, 360, 240
+			ytPlayerTheme: 'light,white', // youtube player theme; dark/light,red/white; 
+			captionFadeDuration: 200,     // caption fade duration
+			slideshow: 0,                 // slideshow interval; 0 = disable slideshows
+			autoClose: 0,                 // close after x milliseconds; 0 = disable autoClose
+			counterText: "{x} of {y}",    // counter text; {x} replaced with current image number; {y} replaced with total image count
+			closeKeys: [27, 88, 67],      // array of keycodes to close easybox, default: Esc (27), 'x' (88), 'c' (67)
+			previousKeys: [37, 80],       // array of keycodes to navigate to the previous image, default: Left arrow (37), 'p' (80)
+			nextKeys: [39, 78]            // array of keycodes to navigate to the next image, default: Right arrow (39), 'n' (78)
 		}, _options);
 		
 		// check for dynamic options inside html
@@ -258,65 +259,12 @@
 				(new Image()).src = resources[nextIndex][0];
 
 			if (imageLink()) {
-				$(center).addClass("easyLoading");
-				imageObj = new Image();
-				imageObj.onload = function() {
-					imageWidth = this.width;
-					imageHeight = this.height;
-					animateBox();
-				};
-				imageObj.onerror = function() {
-					loadError = true;
-					animateBox();
-				}
-				imageObj.src = resources[activeIndex][0];
+				preloadImage();
 			} else if ((id = youtubeLink()) != false) {
-				$(center).addClass("easyLoading");
-				ajaxReq = $.ajax('http://gdata.youtube.com/feeds/api/videos?v=2&alt=jsonc', {
-					type: 'GET',
-					data: {q: id},
-					dataType: 'jsonp',
-					timeout: 2000,
-					success: function(r) {
-						if (r.data.totalItems) {
-							if (r.data.items[0].accessControl.embed == "allowed")
-								videoWidescreen = (r.data.items[0].aspectRatio == "widescreen");
-							else
-								loadError = true;
-						}
-						animateBox();
-					},
-					error: function(x, t) {
-						if (t != "abort") {
-							loadError = true;
-							animateBox();
-						}
-					}});
+				preloadAjax(0, id);	// youtube
 			} else if ((id = vimeoLink()) != false) {
-				$(center).addClass("easyLoading");
-				ajaxReq = $.ajax('http://vimeo.com/api/v2/video/'+id+'.json', {
-					type: 'GET',
-					dataType: 'jsonp',
-					timeout: 2000,
-					success: function(r) {
-						if (r.length) {
-							if ((r[0].embed_privacy == 'anywhere') || (r[0].embed_privacy == 'approved')) {
-								videoWidth = r[0].width || 0;
-								videoHeight = r[0].height || 0;
-							} else {
-								loadError = true;
-							}
-						}
-						animateBox();
-					},
-					error: function(x, t) {
-						if (t != "abort") {
-							loadError = true;
-							animateBox();
-						}
-					}});
+				preloadAjax(1, id); // vimeo
 			} else {
-				// don't need preloading
 				animateBox();
 			}
 		}
@@ -332,16 +280,16 @@
 		var d, // dimensions
 			e; // embedded element
 
-		// remove loading animation
-		$(center).removeClass();
-
 		if (!loadError) {
 			if (imageLink()) {
 				d = limitDim({w: imageWidth, h: imageHeight});
 				e = $("<img src=\""+resources[activeIndex][0]+"\" width=\""+d.w+"\" height=\""+d.h+"\" alt=\""+resources[activeIndex][1]+"\" />");
 			} else if ((id = youtubeLink()) != false) {
+				var p = ''; // params
+				if ((options.ytPlayerTheme) && ((r = /^([a-z]*),([a-z]*)$/.exec(options.ytPlayerTheme)) != null))
+					p = '&theme='+r[1]+'&color='+r[2];
 				d = limitDim({w: Math.round(options.ytPlayerHeight*((videoWidescreen) ? (16.0/9.0) : (4.0/3.0))), h: options.ytPlayerHeight});
-				e = $("<iframe src=\"http://www.youtube.com/embed/"+id+"?version=3&autohide=1&autoplay=1&rel=0\" width=\""+d.w+"\" height=\""+d.h+"\" frameborder=\"0\"></iframe>");
+				e = $("<iframe src=\"http://www.youtube.com/embed/"+id+"?version=3&autohide=1&autoplay=1&rel=0"+p+"\" width=\""+d.w+"\" height=\""+d.h+"\" frameborder=\"0\"></iframe>");
 			} else if ((id = vimeoLink()) != false) {
 				d = limitDim({w: videoWidth, h: videoHeight});
 				e = $("<iframe src=\"http://player.vimeo.com/video/"+id+"?title=0&byline=0&portrait=0&autoplay=true\" width=\""+d.w+"\" height=\""+d.h+"\" frameborder=\"0\"></iframe>");
@@ -474,6 +422,10 @@
 		return false;
 	}
 	
+	/*
+		Link validation functions
+	*/
+	
 	/* returns true if the link is an image */
 	function imageLink() {
 		return /(\.jpg|\.jpeg|\.png|\.gif)$/i.test(resources[activeIndex][0]);
@@ -495,6 +447,69 @@
 	function anchorLink() {
 		var r = /^(.*)\#([A-Za-z0-9\-_]*)$/i.exec(resources[activeIndex][0]);
 		return ((r != null) && ($('#'+r[2]).length)) ? r[2] : false;
+	}
+	
+	/*
+		Preload functions
+		Call animateBox() after preloading
+	*/
+	function preloadImage() {
+		$(center).addClass("easyLoading");
+		imageObj = new Image();
+		imageObj.onload = function() {
+			imageWidth = this.width;
+			imageHeight = this.height;
+			$(center).removeClass("easyLoading");
+			animateBox();
+		};
+		imageObj.onerror = function() {
+			loadError = true;
+			animateBox();
+		}
+		imageObj.src = resources[activeIndex][0];
+	}
+	
+	/* preload ajax; s(ervice) = 0(yt.com),1(vimeo.com) */
+	function preloadAjax(s, id) {
+		var url, params;
+		$(center).addClass("easyLoading");
+		params = {
+			type: 'GET',
+			dataType: 'jsonp',
+			timeout: 2000,
+			error: function(x, t) {
+				if (t != "abort") {
+					loadError = true;
+					animateBox();
+				}
+			}};
+
+		if (s == 0) {
+			url = 'http://gdata.youtube.com/feeds/api/videos/'+id+'?v=2&alt=jsonc';
+			params.success = function(r) {
+					if ((!r.error) && (r.data) && (r.data.accessControl.embed == "allowed"))
+						videoWidescreen = (r.data.aspectRatio == "widescreen");
+					else
+						loadError = true;
+					$(center).removeClass("easyLoading");
+					animateBox();
+				};
+		} else if (s == 1) {
+			url = 'http://vimeo.com/api/v2/video/'+id+'.json';
+			params.success = function(r) {
+				if (r.length) {
+					if ((r[0].embed_privacy == 'anywhere') || (r[0].embed_privacy == 'approved')) {
+						videoWidth = r[0].width || 0;
+						videoHeight = r[0].height || 0;
+					} else {
+						loadError = true;
+					}
+				}
+				$(center).removeClass("easyLoading");
+				animateBox();
+			};
+		}
+		ajaxReq = $.ajax(url, params);
 	}
 	
 	/* limits dimensions */
