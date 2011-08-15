@@ -34,14 +34,14 @@ ul#gallery li img { display: block; padding: 0; margin: 0; }
 <li>better animations</li></ul></p>
 <h2>Examples</h2>
 <p><ul id="gallery">
-<li><a href="img/example1.jpg" rel="lightbox-gallery"><img src="img/example1thmb.jpg" /></a></li>
-<li><a href="img/example2.gif" rel="lightbox-gallery"><img src="img/example2thmb.jpg" /></a></li>
-<li><a href="img/example3.png" rel="lightbox-gallery"><img src="img/example3thmb.jpg" /></a></li>
-<li><a href="img/example4.jpg" rel="lightbox-gallery"><img src="img/example4thmb.jpg" /></a></li>
+<li><a href="img/example1.jpg" rel="lightbox-gallery1"><img src="img/example1thmb.jpg" /></a></li>
+<li><a href="img/example2.gif" rel="lightbox-gallery1"><img src="img/example2thmb.jpg" /></a></li>
+<li><a href="img/example3.png" rel="lightbox-gallery1"><img src="img/example3thmb.jpg" /></a></li>
+<li><a href="img/example4.jpg" rel="lightbox-gallery1"><img src="img/example4thmb.jpg" /></a></li>
 </ul></p>
 <hr />
 <p><a href="http://www.youtube.com/watch?v=XJFmh6W1Jjo" rel="lightbox" title="Example YouTube video">Click here</a> to view a YouTube video inside EasyBox.</p>
-<p><a href="http://vimeo.com/27359051" rel="lightbox" title="Example YouTube video">Click here</a> to view a Vimeo video inside EasyBox.</p>
+<p><a href="http://vimeo.com/27359051" rel="lightbox-vimeo1" title="Example Vimeo video">Click here</a> to view a Vimeo video inside EasyBox.</p>
 <p><a href="http://www.example.com" rel="lightbox" title="Example iFrame">Click here</a> to view an iFrame inside EasyBox.</p>
 <p><a href="#container1" rel="lightbox-slide" title="EasyBox features">Click here</a>, <a href="#container2" rel="lightbox-slide" title="Tested browsers">here</a>, <a href="#container3" rel="lightbox-slide" title="What makes EasyBox different?">here</a> and <a href="#container4" rel="lightbox-slide" title="Credits">here</a> to view an inline element inside EasyBox.</p>
 <p><a href="#container5" rel="lightbox" title="EasyBox inside EasyBox">Click here</a> to test EasyBox inside EasyBox.</p>
@@ -90,31 +90,26 @@ ul#gallery li img { display: block; padding: 0; margin: 0; }
 </div>
 <div id="container5">
 <p><ul id="gallery">
-<li><a href="img/example1.jpg" rel="lightbox-gallery"><img src="img/example1thmb.jpg" /></a></li>
-<li><a href="img/example2.gif" rel="lightbox-gallery"><img src="img/example2thmb.jpg" /></a></li>
-<li><a href="img/example3.png" rel="lightbox-gallery"><img src="img/example3thmb.jpg" /></a></li>
-<li><a href="img/example4.jpg" rel="lightbox-gallery"><img src="img/example4thmb.jpg" /></a></li>
+<li><a href="img/example1.jpg" rel="lightbox-gallery2"><img src="img/example1thmb.jpg" /></a></li>
+<li><a href="img/example2.gif" rel="lightbox-gallery2"><img src="img/example2thmb.jpg" /></a></li>
+<li><a href="img/example3.png" rel="lightbox-gallery2"><img src="img/example3thmb.jpg" /></a></li>
+<li><a href="img/example4.jpg" rel="lightbox-gallery2"><img src="img/example4thmb.jpg" /></a></li>
 </ul></p>
 <hr />
 <p><a href="http://www.youtube.com/watch?v=XJFmh6W1Jjo" rel="lightbox" title="Example YouTube video">Click here</a> to view a YouTube video inside EasyBox.</p>
-<p><a href="http://vimeo.com/27359051" rel="lightbox" title="Example YouTube video">Click here</a> to view a Vimeo video inside EasyBox.</p>
+<p><a href="http://vimeo.com/27359051" rel="lightbox-vimeo2" title="Example Vimeo video">Click here</a> to view a Vimeo video inside EasyBox.</p>
 <p><a href="http://www.example.com" rel="lightbox" title="Example iFrame">Click here</a> to view an iFrame inside EasyBox.</p>
 </div>
 <script type="application/json" id="easyOptions">
 {
 	"global": {
-		"autoClose": 10000,
 		"overlayOpacity": 0.7
 	},
-	"lightbox-gallery": {
-		"loop": true,
-		"slideshow": 5000,
-		"autoClose": 0
-	},
-	"lightbox-slide": {
-		"slideshow": 10000,
-		"autoClose": 0
-	}
+	"lightbox-gallery1": {"loop": true, "slideshow": 5000},
+	"lightbox-vimeo1": {"loop": true},
+	"lightbox-gallery2": {"loop": true, "slideshow": 5000},
+	"lightbox-vimeo2": {"loop": true},
+	"lightbox-slide": {"slideshow": 10000}
 }
 </script>
 </body>

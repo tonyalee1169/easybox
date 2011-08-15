@@ -81,9 +81,9 @@
 
 		// complete options
 		options = $.extend({
-			loop: false,               // navigate between first and last image
-			dynOpts: true,            // checks for a <div id="prefix-options">
-			dragDrop: true,
+			loop: false,                  // navigate between first and last image
+			dynOpts: true,                // checks for a <div id="prefix-options">
+			dragDrop: true,               // enable window drag and drop
 			overlayOpacity: 0.8,          // opacity of the overlay from 0 to 1
 			resizeDuration: 400,          // box resize duration
 			resizeEasing: 'easybox',      // resize easing method; 'swing' = default
@@ -132,7 +132,7 @@
 
 		// copy resources array and set loop option
 		resources = _resources;
-		options.loop = options.loop && (resources.length > 1);
+		options.slideshow = ((options.slideshow) && (resources.length > 1)) ? options.slideshow : 0;
 		
 		// show slideshow button if slideshow
 		$(slideLink).css({display: (((options.slideshow) && (resources.length > 1)) ? '' : 'none')})
@@ -246,8 +246,12 @@
 	function change(index) {
 		if (index >= 0) {
 			activeIndex = index;
-			prevIndex = (activeIndex || (options.loop ? resources.length : 0)) - 1;
-			nextIndex = ((activeIndex + 1) % resources.length) || (options.loop ? 0 : -1);
+			if (resources.length > 1) {
+				prevIndex = (activeIndex || (options.loop ? resources.length : 0)) - 1;
+				nextIndex = ((activeIndex + 1) % resources.length) || (options.loop ? 0 : -1);
+			} else {
+				prevIndex = nextIndex = -1;
+			}
 			
 			// reset everything
 			stop();
@@ -285,14 +289,19 @@
 				d = limitDim({w: imageWidth, h: imageHeight});
 				e = $("<img src=\""+resources[activeIndex][0]+"\" width=\""+d.w+"\" height=\""+d.h+"\" alt=\""+resources[activeIndex][1]+"\" />");
 			} else if ((id = youtubeLink()) != false) {
-				var p = ''; // params
+				var p = '?version=3&autohide=1&autoplay=1&rel=0'; // params
 				if ((options.ytPlayerTheme) && ((r = /^([a-z]*),([a-z]*)$/.exec(options.ytPlayerTheme)) != null))
-					p = '&theme='+r[1]+'&color='+r[2];
+					p += '&theme='+r[1]+'&color='+r[2];
+				if ((options.loop) && (resources.length <= 1))
+					p += '&loop=1&playlist='+id; // youtube glitch; needs playlist for loop
 				d = limitDim({w: Math.round(options.ytPlayerHeight*((videoWidescreen) ? (16.0/9.0) : (4.0/3.0))), h: options.ytPlayerHeight});
-				e = $("<iframe src=\"http://www.youtube.com/embed/"+id+"?version=3&autohide=1&autoplay=1&rel=0"+p+"\" width=\""+d.w+"\" height=\""+d.h+"\" frameborder=\"0\"></iframe>");
+				e = $("<iframe src=\"http://www.youtube.com/embed/"+id+p+"\" width=\""+d.w+"\" height=\""+d.h+"\" frameborder=\"0\"></iframe>");
 			} else if ((id = vimeoLink()) != false) {
+				var p = '?title=0&byline=0&portrait=0&autoplay=true';
 				d = limitDim({w: videoWidth, h: videoHeight});
-				e = $("<iframe src=\"http://player.vimeo.com/video/"+id+"?title=0&byline=0&portrait=0&autoplay=true\" width=\""+d.w+"\" height=\""+d.h+"\" frameborder=\"0\"></iframe>");
+				if ((options.loop) && (resources.length <= 1))
+					p += '&loop=true';
+				e = $("<iframe src=\"http://player.vimeo.com/video/"+id+p+"\" width=\""+d.w+"\" height=\""+d.h+"\" frameborder=\"0\"></iframe>");
 			} else if ((id = anchorLink()) != false) {
 				inlineObj = $('#'+id)[0];
 				inlineParent = $(inlineObj).parent();
