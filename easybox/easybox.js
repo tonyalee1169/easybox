@@ -1,4 +1,4 @@
-/*!
+/*
 	Easybox v0.1 - Lightweight easy to use lightbox clone for jQuery
 	Based on Slimbox2 by Christophe Beyls <http://www.digitalia.be>
 
@@ -241,7 +241,24 @@
 		slideshowDirection = false;	// forwards
 		return change(nextIndex);
 	}
-
+	
+	/* creates interval for slideshow and autoclose */
+	function setTimers() {
+		if ((options.slideshow) && (!slideshowOff) && (slideshowInterval == null)) {
+			if ((slideshowDirection) && (prevIndex >= 0)) { // backwards
+				slideshowInterval = setInterval(previous, options.slideshow);
+				return false;
+			} else if ((!slideshowDirection) && (nextIndex >= 0)) { // forwards
+				slideshowInterval = setInterval(next, options.slideshow);
+				return false;
+			}
+		}
+		
+		if ((options.autoClose) && (closeInterval == null))
+			closeInterval = setInterval(close, options.autoClose);
+		return false;
+	}
+	
 	/*
 		Change resource
 	*/
@@ -346,10 +363,7 @@
 			if (e != null)
 				$(e).css({display: 'block'}).appendTo(container);
 			$(container).fadeIn(options.fadeDuration, animateCaption);
-			if ((options.slideshow) && (nextIndex >= 0) && (!slideshowOff) && (slideshowInterval == null))
-				slideshowInterval = setInterval((slideshowDirection) ? previous : next, options.slideshow);
-			if (options.autoClose)
-				closeInterval = setInterval(close, options.autoClose);
+			setTimers();
 		});
 	}
 
@@ -399,8 +413,7 @@
 		slideshowDirection = false;
 		$(slideLink).toggleClass('disabled', slideshowOff);
 		if (!slideshowOff) {
-			if ((options.slideshow) && (nextIndex >= 0) && (slideshowInterval == null))
-				slideshowInterval = setInterval((slideshowDirection) ? previous : next, options.slideshow);
+			setTimers();
 		} else {
 			if (slideshowInterval != null) {clearInterval(slideshowInterval); slideshowInterval = null; }
 		}
