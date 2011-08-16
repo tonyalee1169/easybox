@@ -61,7 +61,8 @@
 			]).css("display", "none")
 		);
 		
-		$([center, bottomContainer, prevLink, nextLink]).mousedown(dragStart).mousemove(dragMove).mouseup(dragStop).mouseleave(dragStop);
+		$([center, bottomContainer, prevLink, nextLink]).mousedown(dragStart).mousemove(dragMove).mouseup(dragStop);
+		$(window).mouseup(dragStop);
 	});
 
 
