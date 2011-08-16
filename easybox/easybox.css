@@ -1,5 +1,5 @@
-/*!
-	Easybox v0.1 - Lightweight easy to use lightbox clone for jQuery
+/*
+	Easybox v1.0 - Lightweight easy to use lightbox clone for jQuery
 	Based on Slimbox2 by Christophe Beyls <http://www.digitalia.be>
 
 	Copyright (C) 2011 by Vincent Wochnik
@@ -40,7 +40,7 @@
 	top: 50%;
 	z-index: 9999;
 	overflow: hidden;
-	background-color: #fff;
+	background: #fff;
 }
 
 #easyCenter.easyLoading {
@@ -51,7 +51,7 @@
 	background: #fff url(error.png) no-repeat center;
 }
 
-#easyContainer {
+#easyContainer, #easyBottom {
 	border: 10px solid #fff;
 }
 
@@ -59,36 +59,11 @@
 	border: 0;
 	}
 
-#easyPrevLink, #easyNextLink {
-	display: block;
-	position: fixed;
-	z-index: 9999;
-	overflow: hidden;
-	left: 50%;
-	top: 50%;
-	width: 24px;
-	height: 32px;
-	margin: -16px 0px 0px 0px;
-}
-
-#easyPrevLink {
-	background-image: url(prevbtn.png);
-	margin-left: -32px;
-}
-
-#easyNextLink {
-	background-image: url(nextbtn.png);
-	margin-left: 8px;
-}
-
 #easyBottom {
 	font-family: Verdana, Arial, Geneva, Helvetica, sans-serif;
-	font-size: 10px;
 	color: #666;
-	line-height: 1.4em;
 	text-align: left;
-	border: 10px solid #fff;
-	border-top-style: none;
+	border-top: none;
 }
 
 #easyCloseLink {
@@ -98,6 +73,31 @@
 	height: 20px;
 	background: transparent url(closebtn.png) no-repeat center;
 	margin: 0 0 0 10px;
+	outline: none;
+}
+
+#easyNavigation {
+	float: left;
+	width: 32px;
+	height: 20px;
+	margin: 0 10px 0 0;
+}
+
+#easyPrevLink {
+	display: block;
+	float: left;
+	width: 15px;
+	height: 20px;
+	background: transparent url(prevbtn.png) no-repeat center;
+	outline: none;
+}
+
+#easyNextLink {
+	display: block;
+	margin: 0 0 0 17px;
+	width: 15px;
+	height: 20px;
+	background: transparent url(nextbtn.png) no-repeat center;
 	outline: none;
 }
 
@@ -116,10 +116,26 @@
 }
 
 #easyCaption, #easyNumber {
-	margin-right: 71px;
+	display: block;
+	margin-right: 60px;
+}
+
+#easyCaption.nav, #easyNumber.nav {
+	margin-left: 42px;
 }
 
 #easyCaption {
+	font-size: 12px;
 	font-weight: bold;
+	line-height: 16px;
+	height: 16px;
+	padding-top: 2px;
+}
+
+#easyNumber {
+	font-size: 10px;
+	line-height: 10px;
+	height: 10px;
+	padding: 4px 0 6px;
 }
 

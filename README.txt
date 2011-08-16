@@ -1,4 +1,4 @@
-EASYBOX v0.7 README
+EASYBOX v1.0 README
 ====================
 Lightweight easy to use lightbox clone for jQuery
 Based on Slimbox2 by Christophe Beyls <http://www.digitalia.be>

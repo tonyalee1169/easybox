@@ -1,5 +1,5 @@
 /*
-	Easybox v0.1 - Lightweight easy to use lightbox clone for jQuery
+	Easybox v1.0 - Lightweight easy to use lightbox clone for jQuery
 	Based on Slimbox2 by Christophe Beyls <http://www.digitalia.be>
 
 	Copyright (C) 2011 by Vincent Wochnik
@@ -34,7 +34,7 @@
 	// settings
 		imageWidth = 0, imageHeight = 0, videoWidth = 0, videoHeight = 0, videoWidescreen = 0, loadError = false,
 	// DOM elements
-		overlay, center, container, prevLink, nextLink, slideLink, bottomContainer, bottom, caption, number;
+		overlay, center, container, navLinks, prevLink, nextLink, slideLink, bottomContainer, bottom, caption, number;
 
 	/*
 		Initialization
@@ -47,10 +47,12 @@
 				center = $('<div id="easyCenter" />').append([
 					container = $('<div id="easyContainer" />')[0]
 				])[0],
-				prevLink = $('<a id="easyPrevLink" href="#" />').click(previous)[0],
-				nextLink = $('<a id="easyNextLink" href="#" />').click(next)[0],
 				bottomContainer = $('<div id="easyBottomContainer" />').append([
 					bottom = $('<div id="easyBottom" />').append([
+						navLinks = $('<div id="easyNavigation" />').append([
+							prevLink = $('<a id="easyPrevLink" href="#" />').click(previous)[0],
+							nextLink = $('<a id="easyNextLink" href="#" />').click(next)[0]
+						])[0],
 						$('<a id="easyCloseLink" href="#" />').click(close)[0],
 						slideLink = $('<a id="easySlideLink" href="#" />').click(toggleSlide)[0],
 						caption = $('<div id="easyCaption" />')[0],
@@ -61,7 +63,7 @@
 			]).css("display", "none")
 		);
 		
-		$([center, bottomContainer, prevLink, nextLink]).mousedown(dragStart).mousemove(dragMove).mouseup(dragStop);
+		$([center, bottomContainer]).mousedown(dragStart).mousemove(dragMove).mouseup(dragStop);
 		$(window).mouseup(dragStop);
 	});
 
@@ -334,8 +336,10 @@
 			centerHeight = container.offsetHeight;
 			
 			// set caption and number
-			$(caption).html(resources[activeIndex][1] || "");
-			$(number).html((((resources.length > 1) && options.counterText) || "").replace(/{x}/, activeIndex + 1).replace(/{y}/, resources.length));
+			if (resources[activeIndex][1].length)
+				$(caption).html(resources[activeIndex][1]).css({display: ''});
+			if ((resources.length > 1) && (options.counterText.length))
+				$(number).html(options.counterText.replace(/{x}/, activeIndex + 1).replace(/{y}/, resources.length)).css({display: ''});
 		} else {
 			$(center).addClass("easyError");
 			centerWidth = options.initWidth;
@@ -343,9 +347,6 @@
 			
 			// no contents
 			e = null;
-
-			// clear caption and number
-			$([caption, number]).html("");
 		}
 		
 		// resize center
@@ -356,8 +357,6 @@
 		$(center).queue(function() {
 			// position and sizing
 			$(bottomContainer).css({width: centerWidth, marginLeft: -centerWidth/2, marginTop: centerHeight/2});
-			$(prevLink).css({marginLeft: -centerWidth/2 - Math.floor($(prevLink).width() * 1.5)});
-			$(nextLink).css({marginLeft: centerWidth/2 + Math.ceil($(prevLink).width() * 0.5)});
 
 			// append contents and fade in
 			$(container).css({display: "none", visibility: "", opacity: ""});
@@ -373,8 +372,12 @@
 		Called by animateBox() when finished
 	*/
 	function animateCaption() {
-		if (prevIndex >= 0) $(prevLink).css({display: "none", visibility: "", opacity: ""}).fadeIn(options.captionFadeDuration);
-		if (nextIndex >= 0) $(nextLink).css({display: "none", visibility: "", opacity: ""}).fadeIn(options.captionFadeDuration);
+		if ((prevIndex >= 0) || (nextIndex >= 0)) {
+			$(navLinks).css({display: ''});
+			$([caption, number]).addClass("nav");
+			if (prevIndex >= 0) $(prevLink).fadeIn(options.captionFadeDuration);
+			if (nextIndex >= 0) $(nextLink).fadeIn(options.captionFadeDuration);
+		}
 
 		// fade in		
 		$(bottomContainer).css({opacity: ""}).fadeIn(options.captionFadeDuration);
@@ -382,7 +385,7 @@
 	}
 	
 	function position(x, y) {
-		$([center, bottomContainer, prevLink, nextLink]).css({left: x+'px', top: y+'px'});
+		$([center, bottomContainer]).css({left: x+'px', top: y+'px'});
 	}
 
 	/*
@@ -406,6 +409,8 @@
 		videoWidth = videoHeight = 0;
 		$(container).empty();
 		$([center, bottom]).stop(true);
+		$([navLinks, caption, number]).css({display: 'none'});
+		$([caption, number]).removeClass();
 		$([container, bottomContainer, prevLink, nextLink]).stop(true).css({display: "none"});
 	}
 	
