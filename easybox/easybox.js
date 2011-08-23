@@ -34,7 +34,7 @@
 	// settings
 		imageWidth = 0, imageHeight = 0, videoWidth = 0, videoHeight = 0, videoWidescreen = 0, loadError = false,
 	// DOM elements
-		overlay, center, container, navLinks, prevLink, nextLink, slideLink, bottomContainer, bottom, caption, number;
+		overlay, center, container, navLinks, prevLink, nextLink, slideLink, closeLink, bottomContainer, bottom, caption, number;
 
 	/*
 		Initialization
@@ -53,7 +53,7 @@
 							prevLink = $('<a id="easyPrevLink" href="#" />').click(previous)[0],
 							nextLink = $('<a id="easyNextLink" href="#" />').click(next)[0]
 						])[0],
-						$('<a id="easyCloseLink" href="#" />').click(close)[0],
+						closeLink = $('<a id="easyCloseLink" href="#" />').click(close)[0],
 						slideLink = $('<a id="easySlideLink" href="#" />').click(toggleSlide)[0],
 						caption = $('<div id="easyCaption" />')[0],
 						number = $('<div id="easyNumber" />')[0],
@@ -85,9 +85,14 @@
 		// complete options
 		options = $.extend({
 			loop: false,                  // navigate between first and last image
-			loopVideos: false,             // loop videos
+			loopVideos: false,            // loop videos
 			dynOpts: true,                // checks for a <div id="prefix-options">
 			dragDrop: true,               // enable window drag and drop
+			hideBottom: false,            // hide bottom container
+			hideCaption: false,           // hide caption and number
+			hideButtons: false,           // hide buttons
+			noNavigation: false,          // disable navigation
+			noClose: false,               // disable close, only autoclose works
 			overlayOpacity: 0.8,          // opacity of the overlay from 0 to 1
 			resizeDuration: 400,          // box resize duration
 			resizeEasing: 'easybox',      // resize easing method; 'swing' = default
@@ -124,8 +129,18 @@
 
 		// The function is called for a single image, with URL and Title as first two arguments
 		if (typeof _resources == "string") {
-			_resources = [[_resources, startIndex]];
+			resources = [[_resources, startIndex || ""]];
 			startIndex = 0;
+		} else {
+			var i = 0, len;
+			resources = [];
+			for (len = _resources.length; i < len; ++i) {
+				if (typeof _resources[i] == "string")
+					resources.push([_resources[i], ""]);
+				else
+					resources.push([_resources[i][0], _resources[i][1] || ""]);
+			}
+			startIndex = startIndex || 0;
 		}
 
 		// get maximum content dimensions
@@ -135,12 +150,13 @@
 		}
 
 		// copy resources array and set loop option
-		resources = _resources;
 		options.loop = ((options.loop) && (resources.length > 1));
 		options.slideshow = ((options.slideshow) && (resources.length > 1)) ? options.slideshow : 0;
 		
-		// show slideshow button if slideshow
-		$(slideLink).css({display: (((options.slideshow) && (resources.length > 1)) ? '' : 'none')})
+		// show slideshow button if slideshow and not disabled
+		$(slideLink).css({display: (((options.slideshow) && (resources.length > 1) && (!options.hideButtons)) ? '' : 'none')})
+		// show close button if not disabled
+		$(closeLink).css({display: ((!options.hideButtons) ? '' : 'none')})
 
 		if (!running) {
 			// initializing center
@@ -183,13 +199,13 @@
 		var links = this;
 		return links.unbind("click").click(function() {
 			// Build the list of resources that will be displayed
-			var link = this, startIndex = 0, filteredLinks, i = 0, length;
+			var link = this, startIndex = 0, filteredLinks, i = 0, len;
 			filteredLinks = $.grep(links, function(el, i) {
 				return linksFilter.call(link, el, i);
 			});
 
 			// We cannot use jQuery.map() because it flattens the returned array
-			for (length = filteredLinks.length; i < length; ++i) {
+			for (len = filteredLinks.length; i < len; ++i) {
 				if (filteredLinks[i] == link) startIndex = i;
 				filteredLinks[i] = linkMapper(filteredLinks[i], i);
 			}
@@ -224,8 +240,8 @@
 		var code = event.keyCode, fn = $.inArray;
 		// Prevent default keyboard action (like navigating inside the page)
 		return (fn(code, options.closeKeys) >= 0) ? close()
-			: (fn(code, options.nextKeys) >= 0) ? next()
-			: (fn(code, options.previousKeys) >= 0) ? previous()
+			: ((fn(code, options.nextKeys) >= 0) && (!options.noNavigation)) ? next()
+			: ((fn(code, options.previousKeys) >= 0) && (!options.noNavigation)) ? previous()
 			: false;
 	}
 
@@ -258,7 +274,7 @@
 		}
 		
 		if ((options.autoClose) && (closeInterval == null))
-			closeInterval = setInterval(close, options.autoClose);
+			closeInterval = setInterval(autoClose, options.autoClose);
 		return false;
 	}
 	
@@ -372,9 +388,13 @@
 		Called by animateBox() when finished
 	*/
 	function animateCaption() {
-		if ((prevIndex >= 0) || (nextIndex >= 0)) {
+		if (options.hideBottom)
+			return;
+
+		if ((prevIndex >= 0) || (nextIndex >= 0) && (!options.noNavigation) && (!options.hideButtons)) {
 			$(navLinks).css({display: ''});
 			$([caption, number]).addClass("nav");
+			if (options.hideCaption) $([caption, number]).css({display: 'none'});
 			if (prevIndex >= 0) $(prevLink).fadeIn(options.captionFadeDuration);
 			if (nextIndex >= 0) $(nextLink).fadeIn(options.captionFadeDuration);
 		}
@@ -410,7 +430,7 @@
 		$(container).empty();
 		$([center, bottom]).stop(true);
 		$([navLinks, caption, number]).css({display: 'none'});
-		$([caption, number]).removeClass();
+		$([caption, number]).removeClass().html("");
 		$([container, bottomContainer, prevLink, nextLink]).stop(true).css({display: "none"});
 	}
 	
@@ -430,7 +450,10 @@
 	/*
 		Closes the box
 	*/
-	function close() {
+	function close(a) {
+		if ((options.noClose) && (a != 1))
+			return;
+
 		if (activeIndex >= 0) {
 			stop();
 			activeIndex = prevIndex = nextIndex = -1;
@@ -446,6 +469,13 @@
 		}
 
 		return false;
+	}
+	
+	/*
+		Wrapper for autoclose function
+	*/
+	function autoClose() {
+		close(1);
 	}
 	
 	/*
