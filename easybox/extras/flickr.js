@@ -1,5 +1,5 @@
 /*
-	Easybox v1.0 - Lightweight easy to use lightbox clone for jQuery
+	Easybox v1.1 - Lightweight easy to use lightbox clone for jQuery
 	Based on Slimbox2 by Christophe Beyls <http://www.digitalia.be>
 
 	Copyright (C) 2011 by Vincent Wochnik
