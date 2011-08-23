@@ -30,7 +30,7 @@
 	// drag and drop vars
 		dragging = false, dragOffX = 0, dragOffY = 0,
 	// loading requisites
-		imageObj = null, ajaxReq = null, inlineObj = null, inlineParent = null, slideshowInterval = null, closeInterval = null,
+		imageObj = null, ajaxReq = null, inlineObj = null, inlineParent = null, inlineDisplay = null, slideshowInterval = null, closeInterval = null,
 	// settings
 		imageWidth = 0, imageHeight = 0, videoWidth = 0, videoHeight = 0, videoWidescreen = 0, loadError = false,
 	// DOM elements
@@ -339,6 +339,7 @@
 			} else if ((id = anchorLink()) != false) {
 				inlineObj = $('#'+id)[0];
 				inlineParent = $(inlineObj).parent();
+				inlineDisplay = $(inlineObj).css('display');
 				d = limitDim({w: $(inlineObj).width(), h: $(inlineObj).height()});
 				e = $(inlineObj);
 			} else {
@@ -421,8 +422,8 @@
 		if (closeInterval != null) {clearInterval(closeInterval); closeInterval = null; }
 		if (inlineObj != null) {
 			// put inline object back to it's place
-			$(inlineParent).append($(inlineObj).css({display: ""}));
-			inlineObj = inlineParent = null;
+			$(inlineParent).append($(inlineObj).css({display: inlineDisplay}));
+			inlineObj = inlineParent = inlineDisplay = null;
 		}
 		videoWidescreen = loadError = false;
 		imageWidth = imageHeight = 0;
