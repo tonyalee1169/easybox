@@ -114,7 +114,8 @@
 			counterText: "{x} of {y}",    // counter text; {x} replaced with current image number; {y} replaced with total image count
 			closeKeys: [27, 88, 67],      // array of keycodes to close easybox, default: Esc (27), 'x' (88), 'c' (67)
 			previousKeys: [37, 80],       // array of keycodes to navigate to the previous image, default: Left arrow (37), 'p' (80)
-			nextKeys: [39, 78]            // array of keycodes to navigate to the next image, default: Right arrow (39), 'n' (78)
+			nextKeys: [39, 78],           // array of keycodes to navigate to the next image, default: Right arrow (39), 'n' (78)
+			preventOtherKeys: true        // prevents handling of other keys
 		}, _options);
 		
 		// check for dynamic options inside html
@@ -242,7 +243,7 @@
 		return (fn(code, options.closeKeys) >= 0) ? close()
 			: ((fn(code, options.nextKeys) >= 0) && (!options.noNavigation)) ? next()
 			: ((fn(code, options.previousKeys) >= 0) && (!options.noNavigation)) ? previous()
-			: false;
+			: (!options.preventOtherKeys);
 	}
 
 	/*
