@@ -23,6 +23,9 @@
 	THE SOFTWARE.
 */
 
+/*
+	Overlay
+*/
 #easyOverlay {
 	position: fixed;
 	z-index: 9998;
@@ -34,6 +37,9 @@
 	cursor: pointer;
 }
 
+/*
+	Main window and bottom window
+*/
 #easyCenter, #easyBottomContainer {
 	position: fixed;
 	left: 50%;
@@ -43,22 +49,38 @@
 	background: #fff;
 }
 
+/*
+	Loading class
+*/
 #easyCenter.easyLoading {
 	background: #fff url(loading.gif) no-repeat center;
 }
 
+/*
+	Error class
+*/
 #easyCenter.easyError {
 	background: #fff url(error.png) no-repeat center;
 }
 
+/*
+	Resource container and Label/Number/Buttons container
+	Border replaces padding
+*/
 #easyContainer, #easyBottom {
 	border: 10px solid #fff;
 }
 
+/*
+	Disable borders
+*/
 #easyContainer img, #easyContainer iframe {
 	border: 0;
 	}
 
+/*
+	Bottom settings
+*/
 #easyBottom {
 	font-family: Verdana, Arial, Geneva, Helvetica, sans-serif;
 	color: #666;
@@ -66,6 +88,9 @@
 	border-top: none;
 }
 
+/*
+	Close button
+*/
 #easyCloseLink {
 	display: block;
 	float: right;
@@ -76,31 +101,43 @@
 	outline: none;
 }
 
+/*
+	Next and previous button container
+*/
 #easyNavigation {
 	float: left;
-	width: 32px;
+	width: 38px;
 	height: 20px;
 	margin: 0 10px 0 0;
 }
 
+/*
+	Previous button
+*/
 #easyPrevLink {
 	display: block;
 	float: left;
-	width: 15px;
+	width: 18px;
 	height: 20px;
 	background: transparent url(prevbtn.png) no-repeat center;
 	outline: none;
 }
 
+/*
+	Next button
+*/
 #easyNextLink {
 	display: block;
-	margin: 0 0 0 17px;
-	width: 15px;
+	margin: 0 0 0 20px;
+	width: 18px;
 	height: 20px;
 	background: transparent url(nextbtn.png) no-repeat center;
 	outline: none;
 }
 
+/*
+	Slideshow button
+*/
 #easySlideLink {
 	display: block;
 	float: right;
@@ -111,19 +148,31 @@
 	outline: none;
 }
 
+/*
+	Disabled slideshow button
+*/
 #easySlideLink.disabled {
 	background: transparent url(noslidebtn.png) no-repeat center;
 }
 
+/*
+	Caption and number container
+*/
 #easyCaption, #easyNumber {
 	display: block;
 	margin-right: 60px;
 }
 
+/*
+	Caption and number moved right when navigation arrows are present
+*/
 #easyCaption.nav, #easyNumber.nav {
-	margin-left: 42px;
+	margin-left: 48px;
 }
 
+/*
+	Caption container
+*/
 #easyCaption {
 	font-size: 12px;
 	font-weight: bold;
@@ -132,6 +181,9 @@
 	padding-top: 2px;
 }
 
+/*
+	Number container
+*/
 #easyNumber {
 	font-size: 10px;
 	line-height: 10px;
