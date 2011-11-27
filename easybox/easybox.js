@@ -164,6 +164,7 @@
 		$(center).css({width: centerWidth, height: centerHeight, marginLeft: -centerWidth/2, marginTop: -centerHeight/2, opacity: ""});
 
 		setup(1);
+		stop();
 
 		$(center).show();
 		$(overlay).css("opacity", options.overlayOpacity).fadeIn(options.fadeDuration, function() {
