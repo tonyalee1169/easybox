@@ -25,14 +25,14 @@
 
 (function($) {
 	// Global variables
-	var options, resources, activeIndex = -1, prevIndex, nextIndex, centerWidth, centerHeight,
+	var defaults, options, resources, activeIndex = -1, prevIndex, nextIndex, centerWidth, centerHeight,
 		hiddenElements = [], slideshowDirection = false, slideshowOff = false,
 	// drag and drop vars
 		dragging = false, dragOffX = 0, dragOffY = 0,
 	// loading requisites
-		imageObj = null, ajaxReq = null, inlineObj = null, inlineParent = null, inlineDisplay = null, slideshowInterval = null, closeInterval = null,
+		busy = false, imageObj = null, ajaxReq = null, inlineObj = null, inlineParent = null, inlineDisplay = null, busyTimeout = null, slideshowTimeout = null, closeTimeout = null,
 	// settings
-		imageWidth = 0, imageHeight = 0, videoWidth = 0, videoHeight = 0, videoWidescreen = 0, loadError = false,
+		resourceWidth = 0, resourceHeight = 0, videoWidescreen = 0, loadError = false,
 	// DOM elements
 		overlay, center, container, navLinks, prevLink, nextLink, slideLink, closeLink, bottomContainer, bottom, caption, number;
 
@@ -40,50 +40,8 @@
 		Initialization
 	*/
 	$(function() {
-		// append the easybox HTML code at the bottom of the document
-		$("body").append(
-			$([
-				overlay = $('<div id="easyOverlay" />').click(close)[0],
-				center = $('<div id="easyCenter" />').append([
-					container = $('<div id="easyContainer" />')[0]
-				])[0],
-				bottomContainer = $('<div id="easyBottomContainer" />').append([
-					bottom = $('<div id="easyBottom" />').append([
-						navLinks = $('<div id="easyNavigation" />').append([
-							prevLink = $('<a id="easyPrevLink" href="#" />').click(previous)[0],
-							nextLink = $('<a id="easyNextLink" href="#" />').click(next)[0]
-						])[0],
-						closeLink = $('<a id="easyCloseLink" href="#" />').click(close)[0],
-						slideLink = $('<a id="easySlideLink" href="#" />').click(toggleSlide)[0],
-						caption = $('<div id="easyCaption" />')[0],
-						number = $('<div id="easyNumber" />')[0],
-						$('<div style="clear: both;" />')[0]
-					])[0]
-				])[0]
-			]).css("display", "none")
-		);
-		
-		$([center, bottomContainer]).mousedown(dragStart).mousemove(dragMove).mouseup(dragStop);
-		$(window).mouseup(dragStop);
-	});
-
-
-	/*
-		API
-		Opens easybox with the specified parameters
-	*/
-	$.easybox = function(_resources, startIndex, _options, rel) {
-		var running = false;
-		if (activeIndex >= 0) {
-			// easybox already running
-			stop();
-			activeIndex = prevIndex = nextIndex = -1;
-			slideshowDirection = slideshowOff = false;
-			running = true;
-		}
-
-		// complete options
-		options = $.extend({
+		// set defaults
+		defaults = {
 			loop: false,                  // navigate between first and last image
 			loopVideos: false,            // loop videos
 			dynOpts: true,                // checks for a <div id="prefix-options">
@@ -111,12 +69,53 @@
 			captionFadeDuration: 200,     // caption fade duration
 			slideshow: 0,                 // slideshow interval; 0 = disable slideshows
 			autoClose: 0,                 // close after x milliseconds; 0 = disable autoClose
+			busyTimeout: 800,             // enables user controls after a timeout
 			counterText: "{x} of {y}",    // counter text; {x} replaced with current image number; {y} replaced with total image count
 			closeKeys: [27, 88, 67],      // array of keycodes to close easybox, default: Esc (27), 'x' (88), 'c' (67)
 			previousKeys: [37, 80],       // array of keycodes to navigate to the previous image, default: Left arrow (37), 'p' (80)
 			nextKeys: [39, 78],           // array of keycodes to navigate to the next image, default: Right arrow (39), 'n' (78)
 			preventOtherKeys: true        // prevents handling of other keys
-		}, _options);
+		};
+		
+		// append the easybox HTML code at the bottom of the document
+		$("body").append(
+			$([
+				overlay = $('<div id="easyOverlay" />').click(close)[0],
+				center = $('<div id="easyCenter" />').append([
+					container = $('<div id="easyContainer" />')[0]
+				])[0],
+				bottomContainer = $('<div id="easyBottomContainer" />').append([
+					bottom = $('<div id="easyBottom" />').append([
+						navLinks = $('<div id="easyNavigation" />').append([
+							prevLink = $('<a id="easyPrevLink" href="#" />').click(previous)[0],
+							nextLink = $('<a id="easyNextLink" href="#" />').click(next)[0]
+						])[0],
+						closeLink = $('<a id="easyCloseLink" href="#" />').click(close)[0],
+						slideLink = $('<a id="easySlideLink" href="#" />').click(toggleSlide)[0],
+						caption = $('<div id="easyCaption" />')[0],
+						number = $('<div id="easyNumber" />')[0],
+						$('<div style="clear: both;" />')[0]
+					])[0]
+				])[0]
+			]).css("display", "none")
+		);
+		
+		// drag and drop functionality
+		$([center, bottomContainer]).mousedown(dragStart).mousemove(dragMove).mouseup(dragStop);
+		$(window).mouseup(dragStop);
+	});
+
+
+	/*
+		API
+		Opens easybox with the specified parameters
+	*/
+	$.easybox = function(_resources, startIndex, _options, rel) {
+		if (activeIndex >= 0)
+			return false;
+
+		// complete options
+		options = $.extend({}, defaults, _options);
 		
 		// check for dynamic options inside html
 		if ((options.dynOpts) && ($('#easyOptions').length)) {
@@ -159,21 +158,17 @@
 		// show close button if not disabled
 		$(closeLink).css({display: ((!options.hideButtons) ? '' : 'none')})
 
-		if (!running) {
-			// initializing center
-			centerWidth = options.initWidth;
-			centerHeight = options.initHeight;
-			$(center).css({width: centerWidth, height: centerHeight, marginLeft: -centerWidth/2, marginTop: -centerHeight/2, opacity: ""});
+		// initializing center
+		centerWidth = options.initWidth;
+		centerHeight = options.initHeight;
+		$(center).css({width: centerWidth, height: centerHeight, marginLeft: -centerWidth/2, marginTop: -centerHeight/2, opacity: ""});
 
-			setup(1);
+		setup(1);
 
-			$(center).show();
-			$(overlay).css("opacity", options.overlayOpacity).fadeIn(options.fadeDuration, function() {
-				change(startIndex);
-			});
-		} else {
+		$(center).show();
+		$(overlay).css("opacity", options.overlayOpacity).fadeIn(options.fadeDuration, function() {
 			change(startIndex);
-		}
+		});
 
 		return false;
 	};
@@ -230,8 +225,16 @@
 			});
 			hiddenElements = [];
 		}
+
 		var fn = open ? "bind" : "unbind";
+		
+		// key handling
 		$(document)[fn]("keydown", keyDown);
+
+		// mousewheel functionality
+		if ($.fn.mousewheel) {
+			$(window)[fn]('mousewheel', mouseWheel);
+		}
 	}
 
 	/*
@@ -240,12 +243,23 @@
 	function keyDown(event) {
 		var code = event.keyCode, fn = $.inArray;
 		// Prevent default keyboard action (like navigating inside the page)
-		return (fn(code, options.closeKeys) >= 0) ? close()
+		return (busy) ? true
+			: (fn(code, options.closeKeys) >= 0) ? close()
 			: ((fn(code, options.nextKeys) >= 0) && (!options.noNavigation)) ? next()
 			: ((fn(code, options.previousKeys) >= 0) && (!options.noNavigation)) ? previous()
 			: (!options.preventOtherKeys);
 	}
 
+	/*
+		Mouse wheel handling function
+	*/
+	function mouseWheel(event, delta) {
+		return (busy) ? true
+			: ((delta > 0) && (!options.noNavigation)) ? previous()
+			: ((delta < 0) && (!options.noNavigation)) ? next()
+			: (!options.preventOtherKeys);
+	}
+			
 	/*
 		Jump to previous resource
 	*/
@@ -262,21 +276,27 @@
 		return change(nextIndex);
 	}
 	
-	/* creates interval for slideshow and autoclose */
+	/* creates timeout for slideshow and autoclose */
 	function setTimers() {
-		if ((options.slideshow) && (!slideshowOff) && (slideshowInterval == null)) {
+		if ((options.slideshow) && (!slideshowOff) && (slideshowTimeout == null)) {
 			if ((slideshowDirection) && (prevIndex >= 0)) { // backwards
-				slideshowInterval = setInterval(previous, options.slideshow);
+				slideshowTimeout = setTimeout(previous, options.slideshow);
 				return false;
 			} else if ((!slideshowDirection) && (nextIndex >= 0)) { // forwards
-				slideshowInterval = setInterval(next, options.slideshow);
+				slideshowTimeout = setTimeout(next, options.slideshow);
 				return false;
 			}
 		}
 		
-		if ((options.autoClose) && (closeInterval == null))
-			closeInterval = setInterval(autoClose, options.autoClose);
+		if ((options.autoClose) && (closeTimeout == null))
+			closeTimeout = setTimeout(autoClose, options.autoClose);
 		return false;
+	}
+	
+	function setBusyTimeout() {
+		if (options.busyTimeout) {
+			busyTimeout = setTimeout(notBusy, options.busyTimeout);
+		}
 	}
 	
 	/*
@@ -290,6 +310,9 @@
 			
 			// reset everything
 			stop();
+			
+			// set busy timeout
+			setBusyTimeout();
 			
 			// preload previous and next image
 			if ((prevIndex >= 0) && (/(\.jpg|\.jpeg|\.png|\.gif)$/i.test(resources[prevIndex][0])))
@@ -321,7 +344,7 @@
 
 		if (!loadError) {
 			if (imageLink()) {
-				d = limitDim({w: imageWidth, h: imageHeight});
+				d = limitDim({w: resourceWidth, h: resourceHeight});
 				e = $("<img src=\""+resources[activeIndex][0]+"\" width=\""+d.w+"\" height=\""+d.h+"\" alt=\""+resources[activeIndex][1]+"\" />");
 			} else if ((id = youtubeLink()) != false) {
 				var p = '?version=3&autohide=1&autoplay=1&rel=0'; // params
@@ -333,7 +356,7 @@
 				e = $("<iframe src=\"http://www.youtube.com/embed/"+id+p+"\" width=\""+d.w+"\" height=\""+d.h+"\" frameborder=\"0\"></iframe>");
 			} else if ((id = vimeoLink()) != false) {
 				var p = '?title=0&byline=0&portrait=0&autoplay=true';
-				d = limitDim({w: videoWidth, h: videoHeight});
+				d = limitDim({w: resourceWidth, h: resourceHeight});
 				if (options.loopVideos)
 					p += '&loop=true';
 				e = $("<iframe src=\"http://player.vimeo.com/video/"+id+p+"\" width=\""+d.w+"\" height=\""+d.h+"\" frameborder=\"0\"></iframe>");
@@ -375,13 +398,13 @@
 		$(center).queue(function() {
 			// position and sizing
 			$(bottomContainer).css({width: centerWidth, marginLeft: -centerWidth/2, marginTop: centerHeight/2});
-
 			// append contents and fade in
 			$(container).css({display: "none", visibility: "", opacity: ""});
 			if (e != null)
 				$(e).css({display: 'block'}).appendTo(container);
 			$(container).fadeIn(options.fadeDuration, animateCaption);
 			setTimers();
+			busy = false;
 		});
 	}
 
@@ -416,19 +439,20 @@
 	*/
 	function stop() {
 		// reset everything to init state
+		busy = true;
 		$(center).removeClass();
 		if (imageObj != null) { imageObj.onload = imageObj.onerror = null; imageObj = null; }
 		if (ajaxReq != null) { ajaxReq.abort(); ajaxReq = null; }		
-		if (slideshowInterval != null) {clearInterval(slideshowInterval); slideshowInterval = null; }
-		if (closeInterval != null) {clearInterval(closeInterval); closeInterval = null; }
+		if (slideshowTimeout != null) {clearTimeout(slideshowTimeout); slideshowTimeout = null; }
+		if (busyTimeout != null) {clearTimeout(busyTimeout); busyTimeout = null; }
+		if (closeTimeout != null) {clearTimeout(closeTimeout); closeTimeout = null; }
 		if (inlineObj != null) {
 			// put inline object back to it's place
 			$(inlineParent).append($(inlineObj).css({display: inlineDisplay}));
 			inlineObj = inlineParent = inlineDisplay = null;
 		}
 		videoWidescreen = loadError = false;
-		imageWidth = imageHeight = 0;
-		videoWidth = videoHeight = 0;
+		resourceWidth = resourceHeight = 0;
 		$(container).empty();
 		$([center, bottom]).stop(true);
 		$([navLinks, caption, number]).css({display: 'none'});
@@ -443,7 +467,7 @@
 		if (!slideshowOff) {
 			setTimers();
 		} else {
-			if (slideshowInterval != null) {clearInterval(slideshowInterval); slideshowInterval = null; }
+			if (slideshowTimeout != null) {clearTimeout(slideshowTimeout); slideshowTimeout = null; }
 		}
 
 		return false;
@@ -481,6 +505,13 @@
 	}
 	
 	/*
+		Set busy to false
+	*/
+	function notBusy() {
+		busy = false;
+	}
+	
+	/*
 		Link validation functions
 	*/
 	
@@ -515,8 +546,8 @@
 		$(center).addClass("easyLoading");
 		imageObj = new Image();
 		imageObj.onload = function() {
-			imageWidth = this.width;
-			imageHeight = this.height;
+			resourceWidth = this.width;
+			resourceHeight = this.height;
 			$(center).removeClass("easyLoading");
 			animateBox();
 		};
@@ -538,6 +569,7 @@
 			error: function(x, t) {
 				if (t != "abort") {
 					loadError = true;
+					$(center).removeClass("easyLoading");
 					animateBox();
 				}
 			}};
@@ -557,8 +589,8 @@
 			params.success = function(r) {
 				if (r.length) {
 					if ((r[0].embed_privacy == 'anywhere') || (r[0].embed_privacy == 'approved')) {
-						videoWidth = r[0].width || 0;
-						videoHeight = r[0].height || 0;
+						resourceWidth = r[0].width || 0;
+						resourceHeight = r[0].height || 0;
 					} else {
 						loadError = true;
 					}
