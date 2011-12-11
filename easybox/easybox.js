@@ -102,7 +102,7 @@
 		
 		// drag and drop functionality
 		$([center, bottomContainer]).mousedown(dragStart).mousemove(dragMove).mouseup(dragStop);
-		$(window).mouseup(dragStop);
+		$(window).mousemove(dragMove).mouseup(dragStop);
 	});
 
 
