@@ -173,6 +173,9 @@
 
 		return false;
 	};
+	
+	$.easybox.close = autoClose;
+	$.easybox.isOpen = function() { return (activeIndex >= 0); };
 
 	/*
 		options:     Optional options object given to $.easybox function
