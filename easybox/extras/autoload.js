@@ -24,8 +24,15 @@
 */
 if (!/android|iphone|ipod|series60|symbian|windows ce|blackberry|msie 6/i.test(navigator.userAgent)) {
 	jQuery(function($) {
-		$("a[rel^='lightbox']").easybox({/* custom options here */}, null, function(el) {
+		var opts = {/* custom options here */};
+		// backwards compatibility
+		$("a[rel^='lightbox']").easybox(opts, null, function(el) {
 			return (this == el) || ((this.rel.length > 8) && (this.rel == el.rel));
+		});
+
+		// new method
+		$("a.lightbox").easybox(opts, null, function(el) {
+			return (this == el) || ((this.className.indexOf("lightbox") != -1) && (this.hasAttribute("data-lightbox")) && (this.getAttribute("data-lightbox") == el.getAttribute("data-lightbox")));
 		});
 	});
 }
