@@ -52,6 +52,7 @@
 			noNavigation: false,          // disable navigation
 			noClose: false,               // disable close, only autoclose works
 			overlayOpacity: 0.8,          // opacity of the overlay from 0 to 1
+			cornerRadius: 8,              // corner radius
 			resizeDuration: 400,          // box resize duration
 			resizeEasing: 'easybox',      // resize easing method; 'swing' = default
 			fadeDuration: 400,            // image fade-in duration
@@ -399,7 +400,7 @@
 			$(center).animate({height: centerHeight, marginTop: -centerHeight/2, width: centerWidth, marginLeft: -centerWidth/2}, options.resizeDuration, options.resizeEasing);
 
 		// gets executed after animation effect
-		$(center).queue(function() {
+		$(center).queue(function(next) {
 			// position and sizing
 			$(bottomContainer).css({width: centerWidth, marginLeft: -centerWidth/2, marginTop: centerHeight/2});
 			// append contents and fade in
@@ -409,6 +410,7 @@
 			$(container).fadeIn(options.fadeDuration, animateCaption);
 			setTimers();
 			busy = false;
+			next();
 		});
 	}
 
@@ -430,7 +432,8 @@
 
 		// fade in		
 		$(bottomContainer).css({opacity: ""}).fadeIn(options.captionFadeDuration);
-		$(bottom).css("marginTop", -bottom.offsetHeight).animate({marginTop: 0}, options.captionFadeDuration);
+		$(bottom).css({marginTop: -bottom.offsetHeight}).animate({marginTop: 0}, options.captionFadeDuration);
+		$(center).animate({borderBottomLeftRadius: 0, borderBottomRightRadius: 0}, options.captionFadeDuration);
 	}
 	
 	function position(x, y) {
@@ -458,6 +461,8 @@
 		videoWidescreen = loadError = false;
 		resourceWidth = resourceHeight = 0;
 		$(container).empty();
+		$(center).css({borderRadius: options.cornerRadius});
+		$(bottomContainer).css({borderBottomLeftRadius: options.cornerRadius, borderBottomRightRadius: options.cornerRadius});
 		$([center, bottom]).stop(true);
 		$([navLinks, caption, number]).css({display: 'none'});
 		$([caption, number]).removeClass().html("");
