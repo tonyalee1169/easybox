@@ -177,8 +177,10 @@
 	font-size: 12px;
 	font-weight: bold;
 	line-height: 16px;
-	height: 16px;
 	padding-top: 2px;
+	height: 16px;
+	white-space: nowrap;
+	overflow: hidden;
 }
 
 /*
