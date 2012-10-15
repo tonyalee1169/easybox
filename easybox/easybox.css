@@ -52,8 +52,6 @@
 
 #easyLoadingIndicator, #easyErrorIndicator {
 	position: relative;
-	left: 50%;
-	top: 50%;
 }
 /*
 	Loading class

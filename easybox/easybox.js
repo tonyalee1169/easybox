@@ -386,8 +386,6 @@
 				$(number).html(options.counterText.replace(/{x}/, activeIndex + 1).replace(/{y}/, resources.length)).css({display: ''});
 		} else {
 			$(errorIndicator).show();
-			centerWidth = options.initWidth;
-			centerHeight = options.initHeight;
 			
 			// no contents
 			e = null;
@@ -459,7 +457,7 @@
 		$(center).css({width: centerWidth, height: centerHeight, marginLeft: -centerWidth/2, marginTop: -centerHeight/2, opacity: ""});
 		$([navLinks, caption, number, container, bottom, prevLink, nextLink]).css({display: 'none', opacity: ''});
 		$([caption, number]).removeClass().html("").css({display: ((options.hideCaption) ? 'none' : '')});
-		$([loadingIndicator, errorIndicator]).hide();
+		$([loadingIndicator, errorIndicator]).css({left: centerWidth/2, top: centerHeight/2}).hide();
 	}
 	
 	function toggleSlide() {
