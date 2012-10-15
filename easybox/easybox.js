@@ -461,7 +461,8 @@
 		resourceWidth = resourceHeight = 0;
 		$(container).empty();
 		$(center).css({borderRadius: options.cornerRadius});
-		$(bottomContainer).css({borderBottomLeftRadius: options.cornerRadius, borderBottomRightRadius: options.cornerRadius});
+		$(container).css({borderTopLeftRadius: options.cornerRadius, borderTopRightRadius: options.cornerRadius});
+		$(bottom).css({borderBottomLeftRadius: options.cornerRadius, borderBottomRightRadius: options.cornerRadius});
 		$([center, bottom]).stop(true);
 		$([navLinks, caption, number]).css({display: 'none'});
 		$([caption, number]).removeClass().html("");

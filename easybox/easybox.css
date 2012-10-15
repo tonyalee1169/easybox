@@ -46,6 +46,9 @@
 	top: 50%;
 	z-index: 9999;
 	overflow: hidden;
+}
+
+#easyCenter {
 	background: #fff;
 }
 
@@ -84,6 +87,7 @@
 #easyBottom {
 	font-family: Verdana, Arial, Geneva, Helvetica, sans-serif;
 	color: #666;
+	background: #fff;
 	text-align: left;
 	border-top: none;
 }
