@@ -100,10 +100,6 @@
 				])[0]
 			]).css("display", "none")
 		);
-		
-		// drag and drop functionality
-		$([center, bottomContainer]).mousedown(dragStart).mousemove(dragMove).mouseup(dragStop);
-		$(window).mousemove(dragMove).mouseup(dragStop);
 	});
 
 
@@ -237,9 +233,12 @@
 		$(document)[fn]("keydown", keyDown);
 
 		// mousewheel functionality
-		if ($.fn.mousewheel) {
+		if ($.fn.mousewheel)
 			$(window)[fn]('mousewheel', mouseWheel);
-		}
+
+		// drag and drop functionality
+		$([center, bottomContainer])[fn]("mousedown", dragStart)[fn]("mousemove", dragMove)[fn]("mouseup", dragStop);
+		$(window)[fn]('mousemove', dragMove)[fn]("mouseup", dragStop);
 	}
 
 	/*
@@ -422,7 +421,7 @@
 		if (options.hideBottom)
 			return;
 
-		if ((prevIndex >= 0) || (nextIndex >= 0) && (!options.noNavigation) && (!options.hideButtons)) {
+		if (((prevIndex >= 0) || (nextIndex >= 0)) && (!options.noNavigation) && (!options.hideButtons)) {
 			$(navLinks).css({display: ''});
 			$([caption, number]).addClass("nav");
 			if (options.hideCaption) $([caption, number]).css({display: 'none'});
@@ -635,19 +634,25 @@
 			dragOffY = e.pageY - $(this).position().top;
 			return false;
 		}
+		return true;
 	}
 	
 	function dragMove(e) {
-		if ((options.dragDrop) && (dragging))
+		if ((options.dragDrop) && (dragging)) {
 			position(e.pageX - $(window).scrollLeft() - dragOffX,
 			         e.pageY - $(window).scrollTop() - dragOffY);
+			return false;
+		}
+		return true;
 	}
 	
 	function dragStop(e) {
 		if (dragging) {
 			dragging = false;
 			$([center, bottomContainer, prevLink, nextLink]).css({cursor: ''});
+			return false;
 		}
+		return true;
 	}
 	
 	/* easing function with a little bounce effect */
