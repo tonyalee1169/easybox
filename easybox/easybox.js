@@ -403,7 +403,6 @@
 				$(e).css({display: 'block'}).appendTo(container);
 			$(container).fadeIn(options.fadeDuration, animateCaption);
 			setTimers();
-			busy = false;
 			next();
 		});
 	}
@@ -413,6 +412,7 @@
 		Called by animateBox() when finished
 	*/
 	function animateCaption() {
+		busy = false;
 		if (options.hideBottom)
 			return;
 
