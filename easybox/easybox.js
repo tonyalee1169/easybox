@@ -1,5 +1,5 @@
 /*
-	Easybox v1.2 - Lightweight easy to use lightbox clone for jQuery
+	Easybox v1.3 - Lightweight easy to use lightbox clone for jQuery
 	Based on Slimbox2 by Christophe Beyls <http://www.digitalia.be>
 
 	Copyright (C) 2011 by Vincent Wochnik
@@ -424,7 +424,6 @@
 		if (((prevIndex >= 0) || (nextIndex >= 0)) && (!options.noNavigation) && (!options.hideButtons)) {
 			$(navLinks).css({display: ''});
 			$([caption, number]).addClass("nav");
-			if (options.hideCaption) $([caption, number]).css({display: 'none'});
 			if (prevIndex >= 0) $(prevLink).fadeIn(options.captionFadeDuration);
 			if (nextIndex >= 0) $(nextLink).fadeIn(options.captionFadeDuration);
 		}
@@ -461,11 +460,14 @@
 		resourceWidth = resourceHeight = 0;
 		$(container).empty();
 		$(center).css({borderRadius: options.cornerRadius});
-		$(container).css({borderTopLeftRadius: options.cornerRadius, borderTopRightRadius: options.cornerRadius});
+		if (options.hideBottom)
+			$(container).css({borderRadius: options.cornerRadius});
+		else
+			$(container).css({borderTopLeftRadius: options.cornerRadius, borderTopRightRadius: options.cornerRadius, borderBottomLeftRadius: 0, borderBottomRightRadius: 0});
 		$(bottom).css({borderBottomLeftRadius: options.cornerRadius, borderBottomRightRadius: options.cornerRadius});
 		$([center, bottom]).stop(true);
 		$([navLinks, caption, number]).css({display: 'none'});
-		$([caption, number]).removeClass().html("");
+		$([caption, number]).removeClass().html("").css({display: ((options.hideCaption) ? 'none' : '')});
 		$([container, bottomContainer, prevLink, nextLink]).stop(true).css({display: "none"});
 	}
 	
