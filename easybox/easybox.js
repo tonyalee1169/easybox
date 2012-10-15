@@ -34,7 +34,7 @@
 	// settings
 		resourceWidth = 0, resourceHeight = 0, videoWidescreen = 0, loadError = false,
 	// DOM elements
-		overlay, center, container, navLinks, prevLink, nextLink, slideLink, closeLink, bottomContainer, bottom, caption, number;
+		overlay, center, container, navLinks, prevLink, nextLink, slideLink, closeLink, bottom, caption, number;
 
 	/*
 		Initialization
@@ -52,7 +52,6 @@
 			noNavigation: false,          // disable navigation
 			noClose: false,               // disable close, only autoclose works
 			overlayOpacity: 0.8,          // opacity of the overlay from 0 to 1
-			cornerRadius: 8,              // corner radius
 			resizeDuration: 400,          // box resize duration
 			resizeEasing: 'easybox',      // resize easing method; 'swing' = default
 			fadeDuration: 400,            // image fade-in duration
@@ -83,9 +82,7 @@
 			$([
 				overlay = $('<div id="easyOverlay" />').click(close)[0],
 				center = $('<div id="easyCenter" />').append([
-					container = $('<div id="easyContainer" />')[0]
-				])[0],
-				bottomContainer = $('<div id="easyBottomContainer" />').append([
+					container = $('<div id="easyContainer" />')[0],
 					bottom = $('<div id="easyBottom" />').append([
 						navLinks = $('<div id="easyNavigation" />').append([
 							prevLink = $('<a id="easyPrevLink" href="#" />').click(previous)[0],
@@ -158,7 +155,6 @@
 		// initializing center
 		centerWidth = options.initWidth;
 		centerHeight = options.initHeight;
-		$(center).css({width: centerWidth, height: centerHeight, marginLeft: -centerWidth/2, marginTop: -centerHeight/2, opacity: ""});
 
 		setup(1);
 		stop();
@@ -237,7 +233,7 @@
 			$(window)[fn]('mousewheel', mouseWheel);
 
 		// drag and drop functionality
-		$([center, bottomContainer])[fn]("mousedown", dragStart)[fn]("mousemove", dragMove)[fn]("mouseup", dragStop);
+		$(center)[fn]("mousedown", dragStart)[fn]("mousemove", dragMove)[fn]("mouseup", dragStop);
 		$(window)[fn]('mousemove', dragMove)[fn]("mouseup", dragStop);
 	}
 
@@ -396,12 +392,11 @@
 		
 		// resize center
 		if ((center.offsetHeight != centerHeight) || (center.offsetWidth != centerWidth))
-			$(center).animate({height: centerHeight, marginTop: -centerHeight/2, width: centerWidth, marginLeft: -centerWidth/2}, options.resizeDuration, options.resizeEasing);
+			$(center).animate({height: centerHeight, marginTop: -centerHeight/2, width: centerWidth, marginLeft: -centerWidth/2}, options.resizeDuration);
 
 		// gets executed after animation effect
 		$(center).queue(function(next) {
 			// position and sizing
-			$(bottomContainer).css({width: centerWidth, marginLeft: -centerWidth/2, marginTop: centerHeight/2});
 			// append contents and fade in
 			$(container).css({display: "none", visibility: "", opacity: ""});
 			if (e != null)
@@ -428,14 +423,13 @@
 			if (nextIndex >= 0) $(nextLink).fadeIn(options.captionFadeDuration);
 		}
 
-		// fade in		
-		$(bottomContainer).css({opacity: ""}).fadeIn(options.captionFadeDuration);
-		$(bottom).css({marginTop: -bottom.offsetHeight}).animate({marginTop: 0}, options.captionFadeDuration);
-		$(center).animate({borderBottomLeftRadius: 0, borderBottomRightRadius: 0}, options.captionFadeDuration);
+		// fade in
+		$(bottom).fadeIn(options.captionFadeDuration);
+		$(center).animate({height: centerHeight+bottom.offsetHeight}, options.captionFadeDuration, options.resizeEasing);
 	}
 	
 	function position(x, y) {
-		$([center, bottomContainer]).css({left: x+'px', top: y+'px'});
+		$(center).css({left: x+'px', top: y+'px'});
 	}
 
 	/*
@@ -459,16 +453,10 @@
 		videoWidescreen = loadError = false;
 		resourceWidth = resourceHeight = 0;
 		$(container).empty();
-		$(center).css({borderRadius: options.cornerRadius});
-		if (options.hideBottom)
-			$(container).css({borderRadius: options.cornerRadius});
-		else
-			$(container).css({borderTopLeftRadius: options.cornerRadius, borderTopRightRadius: options.cornerRadius, borderBottomLeftRadius: 0, borderBottomRightRadius: 0});
-		$(bottom).css({borderBottomLeftRadius: options.cornerRadius, borderBottomRightRadius: options.cornerRadius});
-		$([center, bottom]).stop(true);
-		$([navLinks, caption, number]).css({display: 'none'});
+		$([center, bottom, container, prevLink, nextLink]).stop(true);
+		$(center).css({width: centerWidth, height: centerHeight, marginLeft: -centerWidth/2, marginTop: -centerHeight/2, opacity: ""});
+		$([navLinks, caption, number, container, bottom, prevLink, nextLink]).css({display: 'none', opacity: ''});
 		$([caption, number]).removeClass().html("").css({display: ((options.hideCaption) ? 'none' : '')});
-		$([container, bottomContainer, prevLink, nextLink]).stop(true).css({display: "none"});
 	}
 	
 	function toggleSlide() {
@@ -500,7 +488,7 @@
 			$(overlay).stop().fadeOut(options.fadeDuration, setup);
 			$(center).animate({height: options.closeHeight, marginTop: -options.closeHeight/2, width: options.closeWidth, marginLeft: -options.closeWidth/2, opacity: 0}, options.fadeDuration, function() {
 				dragStop();
-				$([center, bottomContainer, prevLink, nextLink]).css({left: '', top: ''});
+				$([center, prevLink, nextLink]).css({left: '', top: ''});
 				$(center).hide();
 			});
 		}
@@ -632,7 +620,7 @@
 	function dragStart(e) {
 		if (options.dragDrop) {
 			dragging = true;
-			$([center, bottomContainer, prevLink, nextLink]).css({cursor: 'pointer'});
+			$([center, prevLink, nextLink]).css({cursor: 'pointer'});
 			dragOffX = e.pageX - $(this).position().left;
 			dragOffY = e.pageY - $(this).position().top;
 			return false;
@@ -652,7 +640,7 @@
 	function dragStop(e) {
 		if (dragging) {
 			dragging = false;
-			$([center, bottomContainer, prevLink, nextLink]).css({cursor: ''});
+			$([center, prevLink, nextLink]).css({cursor: ''});
 			return false;
 		}
 		return true;
