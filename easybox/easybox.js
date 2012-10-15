@@ -34,7 +34,7 @@
 	// settings
 		resourceWidth = 0, resourceHeight = 0, videoWidescreen = 0, loadError = false,
 	// DOM elements
-		overlay, center, container, navLinks, prevLink, nextLink, slideLink, closeLink, bottom, caption, number;
+		overlay, center, container, navLinks, prevLink, nextLink, slideLink, closeLink, bottom, caption, number, loadingIndicator, errorIndicator;
 
 	/*
 		Initialization
@@ -83,6 +83,8 @@
 				overlay = $('<div id="easyOverlay" />').click(close)[0],
 				center = $('<div id="easyCenter" />').append([
 					container = $('<div id="easyContainer" />')[0],
+					loadingIndicator = $('<div id="easyLoadingIndicator" />')[0],
+					errorIndicator = $('<div id="easyErrorIndicator" />')[0],
 					bottom = $('<div id="easyBottom" />').append([
 						navLinks = $('<div id="easyNavigation" />').append([
 							prevLink = $('<a id="easyPrevLink" href="#" />').click(previous)[0],
@@ -341,6 +343,7 @@
 	function animateBox() {
 		var d, // dimensions
 			e; // embedded element
+		$(loadingIndicator).hide();
 
 		if (!loadError) {
 			if (imageLink()) {
@@ -382,7 +385,7 @@
 			if ((resources.length > 1) && (options.counterText.length))
 				$(number).html(options.counterText.replace(/{x}/, activeIndex + 1).replace(/{y}/, resources.length)).css({display: ''});
 		} else {
-			$(center).addClass("easyError");
+			$(errorIndicator).show();
 			centerWidth = options.initWidth;
 			centerHeight = options.initHeight;
 			
@@ -439,7 +442,6 @@
 	function stop() {
 		// reset everything to init state
 		busy = true;
-		$(center).removeClass();
 		if (imageObj != null) { imageObj.onload = imageObj.onerror = null; imageObj = null; }
 		if (ajaxReq != null) { ajaxReq.abort(); ajaxReq = null; }		
 		if (slideshowTimeout != null) {clearTimeout(slideshowTimeout); slideshowTimeout = null; }
@@ -457,6 +459,7 @@
 		$(center).css({width: centerWidth, height: centerHeight, marginLeft: -centerWidth/2, marginTop: -centerHeight/2, opacity: ""});
 		$([navLinks, caption, number, container, bottom, prevLink, nextLink]).css({display: 'none', opacity: ''});
 		$([caption, number]).removeClass().html("").css({display: ((options.hideCaption) ? 'none' : '')});
+		$([loadingIndicator, errorIndicator]).hide();
 	}
 	
 	function toggleSlide() {
@@ -542,12 +545,11 @@
 		Call animateBox() after preloading
 	*/
 	function preloadImage() {
-		$(center).addClass("easyLoading");
+		$(loadingIndicator).show();
 		imageObj = new Image();
 		imageObj.onload = function() {
 			resourceWidth = this.width;
 			resourceHeight = this.height;
-			$(center).removeClass("easyLoading");
 			animateBox();
 		};
 		imageObj.onerror = function() {
@@ -560,7 +562,7 @@
 	/* preload ajax; s(ervice) = 0(yt.com),1(vimeo.com) */
 	function preloadAjax(s, id) {
 		var url, params;
-		$(center).addClass("easyLoading");
+		$(loadingIndicator).show();
 		params = {
 			type: 'GET',
 			dataType: 'jsonp',
@@ -568,7 +570,6 @@
 			error: function(x, t) {
 				if (t != "abort") {
 					loadError = true;
-					$(center).removeClass("easyLoading");
 					animateBox();
 				}
 			}};
@@ -580,7 +581,6 @@
 						videoWidescreen = (r.data.aspectRatio == "widescreen");
 					else
 						loadError = true;
-					$(center).removeClass("easyLoading");
 					animateBox();
 				};
 		} else if (s == 1) {
@@ -594,7 +594,6 @@
 						loadError = true;
 					}
 				}
-				$(center).removeClass("easyLoading");
 				animateBox();
 			};
 		}
