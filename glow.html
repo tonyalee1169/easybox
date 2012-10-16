@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>EasyBox example page</title>
+<script type="text/javascript" src="easybox/jquery-1.7.1.min.js"></script>
+<script type="text/javascript" src="easybox/jquery.mousewheel.min.js"></script>
+<script type="text/javascript" src="easybox/easybox.min.js"></script>
+<link rel="stylesheet" href="easybox/styles/glow/easybox.min.css" type="text/css" media="screen" />
+<style type="text/css">
+body { background-color: #020; font-family: arial, helvetica, sans-serif; font-size: 12pt; color: #00bf00; }
+hr { visibility: hidden; clear: both; }
+a { font-weight: bold; color: #60ff60; text-decoration: none; }
+#wrapper { margin: 0 auto; padding: 16px; max-width: 520px; }
+ul#gallery { padding: 0; margin: 0; list-style: none; }
+ul#gallery li { display: block; float: left; margin: 0 4px 4px 0; }
+ul#gallery li img { display: block; padding: 0; margin: 0; }
+</style>
+</head>
+<body>
+<div id="wrapper">
+<h1>Easybox example page</h1>
+<p>EasyBox is a lightbox clone based on the light-weight Slimbox2 script. It offers a variety of additional features such as:</p>
+<p><ul><li>displaying YouTube and Vimeo videos,</li>
+<li>displaying inline content,</li>
+<li>displaying iFrames and</li>
+<li>better animations</li></ul></p>
+<h2>Examples</h2>
+<h3>Images</h3>
+<p><ul id="gallery">
+<li><a href="img/example1.jpg" title="Image 1 with a fucking fucking fucking fucking long unbelievable long caption you son of a bitch :D" class="lightbox" data-lightbox="gallery1"><img src="img/example1thmb.jpg" /></a></li>
+<li><a href="img/example2.gif" title="Image 2" class="lightbox" data-lightbox="gallery1"><img src="img/example2thmb.jpg" /></a></li>
+<li><a href="img/example3.png" title="Image 3" class="lightbox" data-lightbox="gallery1"><img src="img/example3thmb.jpg" /></a></li>
+<li><a href="img/example4.jpg" title="Image 4" class="lightbox" data-lightbox="gallery1"><img src="img/example4thmb.jpg" /></a></li>
+</ul></p>
+<hr />
+<h3>Various elements</h3>
+<p><a href="http://www.youtube.com/watch?v=XJFmh6W1Jjo" rel="lightbox" title="Example YouTube video">Click here</a> to view a YouTube video inside EasyBox.</p>
+<p><a href="http://vimeo.com/27359051" rel="lightbox-vimeo1" title="Example Vimeo video">Click here</a> to view a Vimeo video inside EasyBox.</p>
+<p><a href="http://www.example.com" rel="lightbox" title="Example iFrame">Click here</a> to view an iFrame inside EasyBox.</p>
+</div>
+</body>
+</html>
