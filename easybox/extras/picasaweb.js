@@ -34,8 +34,8 @@
 if (!/android|iphone|ipod|series60|symbian|windows ce|blackberry|msie 6/i.test(navigator.userAgent)) {
 	jQuery(function($) {
 		$("a[href^='http://picasaweb.google.'] > img:first-child[src]").parent().easybox({/* custom options here */}, function(el) {
-			return [el.firstChild.src.replace(/\/s\d+(?:\-c)?\/([^\/]+)$/, "/s512/$1"),
-				(el.title || el.firstChild.alt) + '<br /><a href="' + el.href + '">Picasa Web Albums page</a>'];
+			return {url: el.firstChild.src.replace(/\/s\d+(?:\-c)?\/([^\/]+)$/, "/s512/$1"),
+				caption: (el.title || el.firstChild.alt) + '<br /><a href="' + el.href + '">Picasa Web Albums page</a>'};
 		});
 	});
 }

@@ -177,7 +177,7 @@
 			options.maxHeight = Math.min(Math.round(screen.height*options.maxScreenFill), options.maxHeight);
 		}
 
-		// set loop option
+		// copy resources array and set loop option
 		options.loop = ((options.loop) && (resources.length > 1));
 		options.slideshow = ((options.slideshow) && (resources.length > 1)) ? options.slideshow : 0;
 		

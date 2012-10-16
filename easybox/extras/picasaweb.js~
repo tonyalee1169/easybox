@@ -22,20 +22,20 @@
 	OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 	THE SOFTWARE.
 
-	This code automatically integrates Flickr thumbnails with EasyBox.
-	It will scan for all links around thumbnail images pointing to Flickr photo PAGES.
+	This code automatically integrates Picasa Web Albums thumbnails with EasyBpx.
+	It will scan for all links around thumbnail images pointing to Picasa Web Albums photo PAGES.
 	Note that you don't need to add rel="lightbox" to these links.
-	When clicking on a Flickr thumbnail, EasyBox will open and display the medium-sized image.
+	When clicking on a Picasa Web Albums thumbnail, EasyBox will open and display the medium-sized image.
 	The title attribute of the link (or the alt attribute of the thumbnail if not available) will be used
-	as description text, and a link to the Flickr photo page will be added under the description.
+	as description text, and a link to the Picasa Web Albums photo page will be added under the description.
 
 	Add the following code to the autoload code block.
 */
 if (!/android|iphone|ipod|series60|symbian|windows ce|blackberry|msie 6/i.test(navigator.userAgent)) {
 	jQuery(function($) {
-		$("a[href^='http://www.flickr.com/photos/'] > img:first-child[src]").parent().easybox({/* custom options here */}, function(el) {
-			return {url: el.firstChild.src.replace(/_[mts]\.(\w+)$/, ".$1"),
-				caption: (el.title || el.firstChild.alt) + '<br /><a href="' + el.href + '">Flickr page</a>'};
+		$("a[href^='http://picasaweb.google.'] > img:first-child[src]").parent().easybox({/* custom options here */}, function(el) {
+			return [el.firstChild.src.replace(/\/s\d+(?:\-c)?\/([^\/]+)$/, "/s512/$1"),
+				(el.title || el.firstChild.alt) + '<br /><a href="' + el.href + '">Picasa Web Albums page</a>'];
 		});
 	});
 }
