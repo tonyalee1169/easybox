@@ -172,8 +172,8 @@
 #easySlideLink {
 	display: block;
 	float: right;
-	width: 20px;
-	height: 20px;
+	width: 24px;
+	height: 24px;
 	background: url(controls.png) no-repeat -48px 0px;
 	margin: 0 0 0 10px;
 	outline: none;
