@@ -25,14 +25,12 @@
 
 (function($) {
 	// Global variables
-	var defaults, options, resources, activeIndex = -1, prevIndex, nextIndex, centerWidth, centerHeight,
+	var defaults, options, resources, activeResource, activeIndex = -1, prevIndex, nextIndex, centerWidth, centerHeight,
 		hiddenElements = [], slideshowDirection = false, slideshowOff = false,
 	// drag and drop vars
 		dragging = false, dragOffX = 0, dragOffY = 0,
 	// loading requisites
-		busy = false, imageObj = null, ajaxReq = null, inlineObj = null, inlineParent = null, inlineDisplay = null, busyTimeout = null, slideshowTimeout = null, closeTimeout = null,
-	// settings
-		resourceWidth = 0, resourceHeight = 0, videoWidescreen = 0, loadError = false,
+		busy = false, inlineObj = null, inlineParent = null, inlineDisplay = null, busyTimeout = null, slideshowTimeout = null, closeTimeout = null,
 	// DOM elements
 		overlay, center, container, navLinks, prevLink, nextLink, slideLink, closeLink, bottom, caption, number, loadingIndicator, errorIndicator;
 
@@ -83,8 +81,8 @@
 				overlay = $('<div id="easyOverlay" />').click(close)[0],
 				center = $('<div id="easyCenter" />').append([
 					container = $('<div id="easyContainer" />')[0],
-					loadingIndicator = $('<div id="easyLoadingIndicator" />')[0],
 					errorIndicator = $('<div id="easyErrorIndicator" />')[0],
+					loadingIndicator = $('<div id="easyLoadingIndicator" />')[0],
 					bottom = $('<div id="easyBottom" />').append([
 						navLinks = $('<div id="easyNavigation" />').append([
 							prevLink = $('<a id="easyPrevLink" href="#" />').click(previous)[0],
@@ -103,40 +101,82 @@
 
 
 	/*
+		options:     Optional options object given to $.easybox function
+		linkMapper:  Optional function taking a link DOM element and an index as arguments and returning an array containing 2 elements:
+		             the image URL and the image caption (may contain HTML)
+		linksFilter: Optional function taking a link DOM element and an index as arguments and returning true if the element is part of
+		             the image collection that will be shown on click, false if not. "this" refers to the element that was clicked.
+		             This function must always return true when the DOM element argument is "this".
+		             This function must not return true when the rel tags of the DOM element and *this* are not equal.
+		rel:         EasyBox looks for this in #easyOptions tags
+	*/
+	$.fn.easybox = function(_options, linkMapper, linksFilter) {
+		linkMapper = linkMapper || function(el) {
+			return {url: el.href, caption: el.title};
+		};
+
+		linksFilter = linksFilter || function(el) {
+			return (this == el);
+		};
+
+		var links = this;
+		return links.unbind("click").click(function() {
+			// Build the list of resources that will be displayed
+			var link = this, startIndex = 0, filteredLinks, i = 0, len;
+			filteredLinks = $.grep(links, function(el, i) {
+				return linksFilter.call(link, el, i);
+			});
+
+			// We cannot use jQuery.map() because it flattens the returned array
+			for (len = filteredLinks.length; i < len; ++i) {
+				if (filteredLinks[i] == link) startIndex = i;
+				filteredLinks[i] = linkMapper(filteredLinks[i], i);
+			}
+
+		
+			// check for dynamic options inside html
+			if (((_options.dynOpts) || (defaults.dynOpts)) && ($('#easyOptions').length)) {
+				var rel = $(link).attr('rel') || null;
+				var o = $.parseJSON($('#easyOptions').html());
+				$.each(o, function(key, val) {
+					if ((key == 'global') || ((typeof rel == 'string') && (key == rel))) {
+						_options = $.extend(_options, val);
+					}
+				});
+			}
+			return $.easybox(filteredLinks, startIndex, _options);
+		});
+	};
+
+	/*
 		API
 		Opens easybox with the specified parameters
 	*/
-	$.easybox = function(_resources, startIndex, _options, rel) {
+	$.easybox = function(_resources, startIndex, _options) {
+		function mkResource(obj) {
+			return $.extend({url: "", caption: "", type: "", loaded: false, loading: false, error: false, width: options.defWidth, height: options.defHeight}, obj);
+		}
+		
 		if (activeIndex >= 0)
 			return false;
 
 		// complete options
 		options = $.extend({}, defaults, _options);
-		
-		// check for dynamic options inside html
-		if ((options.dynOpts) && ($('#easyOptions').length)) {
-			var o = $.parseJSON($('#easyOptions').html());
-			$.each(o, function(key, val) {
-				if ((key == 'global') || ((typeof rel == 'string') && (key == rel))) {
-					options = $.extend(options, val);
-				}
-			});
-		}
 
 		// The function is called for a single image, with URL and Title as first two arguments
 		if (typeof _resources == "string") {
-			resources = [[_resources, startIndex || ""]];
+			resources = [mkResource({url: _resources, caption: startIndex || ""})];
 			startIndex = 0;
 		} else {
 			var i = 0, len;
 			resources = [];
 			for (len = _resources.length; i < len; ++i) {
 				if (typeof _resources[i] == "string")
-					resources.push([_resources[i], ""]);
+					resources.push(mkResource({url: _resources[i]}));
 				else
-					resources.push([_resources[i][0], _resources[i][1] || ""]);
+					resources.push(mkResource(_resources[i]));
 			}
-			startIndex = startIndex || 0;
+			startIndex = Math.min(resources.length-1, startIndex || 0);
 		}
 
 		// get maximum content dimensions
@@ -168,47 +208,10 @@
 
 		return false;
 	};
-	
+
 	$.easybox.close = autoClose;
 	$.easybox.isOpen = function() { return (activeIndex >= 0); };
-
-	/*
-		options:     Optional options object given to $.easybox function
-		linkMapper:  Optional function taking a link DOM element and an index as arguments and returning an array containing 2 elements:
-		             the image URL and the image caption (may contain HTML)
-		linksFilter: Optional function taking a link DOM element and an index as arguments and returning true if the element is part of
-		             the image collection that will be shown on click, false if not. "this" refers to the element that was clicked.
-		             This function must always return true when the DOM element argument is "this".
-		             This function must not return true when the rel tags of the DOM element and *this* are not equal.
-		rel:         EasyBox looks for this in #easyOptions tags
-	*/
-	$.fn.easybox = function(_options, linkMapper, linksFilter) {
-		linkMapper = linkMapper || function(el) {
-			return [el.href, el.title];
-		};
-
-		linksFilter = linksFilter || function(el) {
-			return (this == el);
-		};
-
-		var links = this;
-		return links.unbind("click").click(function() {
-			// Build the list of resources that will be displayed
-			var link = this, startIndex = 0, filteredLinks, i = 0, len;
-			filteredLinks = $.grep(links, function(el, i) {
-				return linksFilter.call(link, el, i);
-			});
-
-			// We cannot use jQuery.map() because it flattens the returned array
-			for (len = filteredLinks.length; i < len; ++i) {
-				if (filteredLinks[i] == link) startIndex = i;
-				filteredLinks[i] = linkMapper(filteredLinks[i], i);
-			}
-			return $.easybox(filteredLinks, startIndex, _options, $(link).attr('rel') || null);
-		});
-	};
-
-
+	
 	/*
 		Setup and unsetup function
 	*/
@@ -305,8 +308,9 @@
 		Change resource
 	*/
 	function change(index) {
-		if (index >= 0) {
+		if ((index >= 0) && (index < resources.length)) {
 			activeIndex = index;
+			activeResource = resources[index];
 			prevIndex = (activeIndex || (options.loop ? resources.length : 0)) - 1;
 			nextIndex = ((activeIndex + 1) % resources.length) || (options.loop ? 0 : -1);
 			
@@ -316,24 +320,58 @@
 			// set busy timeout
 			setBusyTimeout();
 			
-			// preload previous and next image
-			if ((prevIndex >= 0) && (/(\.jpg|\.jpeg|\.png|\.gif)$/i.test(resources[prevIndex][0])))
-				(new Image()).src = resources[prevIndex][0];
-			if ((nextIndex >= 0) && (/(\.jpg|\.jpeg|\.png|\.gif)$/i.test(resources[nextIndex][0])))
-				(new Image()).src = resources[nextIndex][0];
+			if (prevIndex >= 0)
+				load(prevIndex);
+			if (nextIndex >= 0)
+				load(nextIndex);
 
-			if (imageLink()) {
-				preloadImage();
-			} else if ((id = youtubeLink()) != false) {
-				preloadAjax(0, id);	// youtube
-			} else if ((id = vimeoLink()) != false) {
-				preloadAjax(1, id); // vimeo
-			} else {
-				animateBox();
-			}
+			if (!resources[activeIndex].loaded)
+				$(loadingIndicator).show();
+			load(activeIndex);
 		}
 
 		return false;
+	}
+	
+	function load(index) {
+		if (resources[index].loaded)
+			loaded(index);
+		if (resources[index].loading)
+			return;
+		resources[index].loading = true;
+
+		if (imageLink(index)) {
+			resources[index].type = "image";
+			preloadImage(index);
+		} else if ((id = youtubeLink(index)) != false) {
+			resources[index].type = "youtube";
+			resources[index].id = id;
+			preloadAjax(index, id);	// youtube
+		} else if ((id = vimeoLink(index)) != false) {
+			resources[index].type = "vimeo";
+			resources[index].id = id;
+			preloadAjax(index, id); // vimeo
+		} else if ((id = anchorLink(index)) != false) {
+			resources[index].type = "inline";
+			var o = $('#'+id)[0];
+			if (o) {
+			      resources[index].width = $(o).width();
+			      resources[index].height = $(o).height();
+			      resources[index].obj = o;
+			} else {
+			      resources[index].error = true;
+			}
+			  
+			loaded(index);
+		} else {
+			loaded(index);
+		}
+	}
+	
+	function loaded(index) {
+		resources[index].loaded = true;
+		if (index == activeIndex)
+			animateBox();
 	}
 
 	/*
@@ -342,54 +380,54 @@
 	*/
 	function animateBox() {
 		var d, // dimensions
-			e; // embedded element
+			e, // embedded element
+		      c; // container
 		$(loadingIndicator).hide();
 
-		if (!loadError) {
-			if (imageLink()) {
-				d = limitDim({w: resourceWidth, h: resourceHeight});
-				e = $("<img src=\""+resources[activeIndex][0]+"\" width=\""+d.w+"\" height=\""+d.h+"\" alt=\""+resources[activeIndex][1]+"\" />");
-			} else if ((id = youtubeLink()) != false) {
+		if (!resources[activeIndex].error) {
+			d = limitDim({w: resources[activeIndex].width, h: resources[activeIndex].height});
+			if (resources[activeIndex].type == "image") {
+				e = $("<img src=\""+resources[activeIndex].url+"\" width=\""+d.w+"\" height=\""+d.h+"\" alt=\""+resources[activeIndex].caption+"\" />");
+			} else if (resources[activeIndex].type == "youtube") {
 				var p = '?version=3&autohide=1&autoplay=1&rel=0'; // params
 				if ((options.ytPlayerTheme) && ((r = /^([a-z]*),([a-z]*)$/.exec(options.ytPlayerTheme)) != null))
 					p += '&theme='+r[1]+'&color='+r[2];
 				if (options.loopVideos)
-					p += '&loop=1&playlist='+id; // youtube glitch; needs playlist for loop
-				d = limitDim({w: Math.round(options.ytPlayerHeight*((videoWidescreen) ? (16.0/9.0) : (4.0/3.0))), h: options.ytPlayerHeight});
-				e = $("<iframe src=\"http://www.youtube.com/embed/"+id+p+"\" width=\""+d.w+"\" height=\""+d.h+"\" frameborder=\"0\"></iframe>");
-			} else if ((id = vimeoLink()) != false) {
+					p += '&loop=1&playlist='+resources[activeIndex].id; // youtube glitch; needs playlist for loop
+				e = $("<iframe src=\"http://www.youtube.com/embed/"+resources[activeIndex].id+p+"\" width=\""+d.w+"\" height=\""+d.h+"\" frameborder=\"0\"></iframe>");
+			} else if (resources[activeIndex].type == "vimeo") {
 				var p = '?title=0&byline=0&portrait=0&autoplay=true';
-				d = limitDim({w: resourceWidth, h: resourceHeight});
 				if (options.loopVideos)
 					p += '&loop=true';
-				e = $("<iframe src=\"http://player.vimeo.com/video/"+id+p+"\" width=\""+d.w+"\" height=\""+d.h+"\" frameborder=\"0\"></iframe>");
-			} else if ((id = anchorLink()) != false) {
-				inlineObj = $('#'+id)[0];
+				e = $("<iframe src=\"http://player.vimeo.com/video/"+resources[activeIndex].id+p+"\" width=\""+d.w+"\" height=\""+d.h+"\" frameborder=\"0\"></iframe>");
+			} else if (resources[activeIndex].type == "inline") {
+				inlineObj = resources[activeIndex].obj;
 				inlineParent = $(inlineObj).parent();
 				inlineDisplay = $(inlineObj).css('display');
-				d = limitDim({w: $(inlineObj).width(), h: $(inlineObj).height()});
 				e = $(inlineObj);
 			} else {
-				d = limitDim({});
-				e = $("<iframe width=\""+d.w+"\" height=\""+d.h+"\" src=\""+resources[activeIndex][0]+"\" frameborder=\"0\"></iframe>");
+				e = $("<iframe width=\""+d.w+"\" height=\""+d.h+"\" src=\""+resources[activeIndex].url+"\" frameborder=\"0\"></iframe>");
 			}
 			
-			// retrieve center dimensions
-			$(container).css({visibility: "hidden", display: ""}).width(d.w).height(d.h);
-			centerWidth = container.offsetWidth;
-			centerHeight = container.offsetHeight;
-			
 			// set caption and number
-			if (resources[activeIndex][1].length)
-				$(caption).html(resources[activeIndex][1]).css({display: ''});
+			if (resources[activeIndex].caption.length)
+				$(caption).html(resources[activeIndex].caption).css({display: ''});
 			if ((resources.length > 1) && (options.counterText.length))
 				$(number).html(options.counterText.replace(/{x}/, activeIndex + 1).replace(/{y}/, resources.length)).css({display: ''});
+			
+			$(container).width(d.w).height(d.h);
+			c = container;
 		} else {
-			$(errorIndicator).show();
+			c = errorIndicator;
 			
 			// no contents
 			e = null;
 		}
+
+		// retrieve center dimensions
+		$(c).css({visibility: "hidden", display: ""});
+		centerWidth = c.offsetWidth;
+		centerHeight = c.offsetHeight;
 		
 		// resize center
 		if ((center.offsetHeight != centerHeight) || (center.offsetWidth != centerWidth))
@@ -399,10 +437,10 @@
 		$(center).queue(function(next) {
 			// position and sizing
 			// append contents and fade in
-			$(container).css({display: "none", visibility: "", opacity: ""});
+			$(c).css({display: "none", visibility: "", opacity: ""});
 			if (e != null)
 				$(e).css({display: 'block'}).appendTo(container);
-			$(container).fadeIn(options.fadeDuration, animateCaption);
+			$(c).fadeIn(options.fadeDuration, animateCaption);
 			setTimers();
 			next();
 		});
@@ -440,8 +478,6 @@
 	function stop() {
 		// reset everything to init state
 		busy = true;
-		if (imageObj != null) { imageObj.onload = imageObj.onerror = null; imageObj = null; }
-		if (ajaxReq != null) { ajaxReq.abort(); ajaxReq = null; }		
 		if (slideshowTimeout != null) {clearTimeout(slideshowTimeout); slideshowTimeout = null; }
 		if (busyTimeout != null) {clearTimeout(busyTimeout); busyTimeout = null; }
 		if (closeTimeout != null) {clearTimeout(closeTimeout); closeTimeout = null; }
@@ -450,14 +486,11 @@
 			$(inlineParent).append($(inlineObj).css({display: inlineDisplay}));
 			inlineObj = inlineParent = inlineDisplay = null;
 		}
-		videoWidescreen = loadError = false;
-		resourceWidth = resourceHeight = 0;
 		$(container).empty();
 		$([center, bottom, container, prevLink, nextLink]).stop(true);
 		$(center).css({width: centerWidth, height: centerHeight, marginLeft: -centerWidth/2, marginTop: -centerHeight/2, opacity: ""});
-		$([navLinks, caption, number, container, bottom, prevLink, nextLink]).css({display: 'none', opacity: ''});
+		$([navLinks, caption, number, container, bottom, prevLink, nextLink, errorIndicator]).css({display: 'none', opacity: ''});
 		$([caption, number]).removeClass().html("").css({display: ((options.hideCaption) ? 'none' : '')});
-		$([loadingIndicator, errorIndicator]).css({left: centerWidth/2, top: centerHeight/2}).hide();
 	}
 	
 	function toggleSlide() {
@@ -516,25 +549,25 @@
 	*/
 	
 	/* returns true if the link is an image */
-	function imageLink() {
-		return /(\.jpg|\.jpeg|\.png|\.gif)$/i.test(resources[activeIndex][0]);
+	function imageLink(index) {
+		return /(\.jpg|\.jpeg|\.png|\.gif)$/i.test(resources[index].url);
 	}
 	
 	/* returns the youtube id if active link is a youtube link */
-	function youtubeLink() {
-		var r = /^http\:\/\/www\.youtube\.com\/watch\?v=([A-Za-z0-9\-_]*)(&(.*))?$/i.exec(resources[activeIndex][0]);
+	function youtubeLink(index) {
+		var r = /^http\:\/\/www\.youtube\.com\/watch\?v=([A-Za-z0-9\-_]*)(&(.*))?$/i.exec(resources[index].url);
 		return (r != null) ? r[1] : false;
 	}
 
 	/* returns the vimeo id if active link is a vimeo link */
-	function vimeoLink() {
-		var r = /^http\:\/\/vimeo\.com\/([0-9]*)(.*)?$/i.exec(resources[activeIndex][0]);
+	function vimeoLink(index) {
+		var r = /^http\:\/\/vimeo\.com\/([0-9]*)(.*)?$/i.exec(resources[index].url);
 		return (r != null) ? r[1] : false;
 	}
 	
 	/* returns the name of an element if active link is an anchor */
-	function anchorLink() {
-		var r = /^(.*)\#([A-Za-z0-9\-_]*)$/i.exec(resources[activeIndex][0]);
+	function anchorLink(index) {
+		var r = /^(.*)\#([A-Za-z0-9\-_]*)$/i.exec(resources[index].url);
 		return ((r != null) && ($('#'+r[2]).length)) ? r[2] : false;
 	}
 	
@@ -542,60 +575,60 @@
 		Preload functions
 		Call animateBox() after preloading
 	*/
-	function preloadImage() {
-		$(loadingIndicator).show();
-		imageObj = new Image();
-		imageObj.onload = function() {
-			resourceWidth = this.width;
-			resourceHeight = this.height;
-			animateBox();
+	function preloadImage(index) {
+		var obj = new Image();
+		obj.onload = function() {
+			resources[index].width = this.width;
+			resources[index].height = this.height;
+			loaded(index);
 		};
-		imageObj.onerror = function() {
-			loadError = true;
-			animateBox();
+		obj.onerror = function() {
+			resources[index].error = true;
+			loaded(index);
 		}
-		imageObj.src = resources[activeIndex][0];
+		obj.src = resources[index].url;
 	}
 	
 	/* preload ajax; s(ervice) = 0(yt.com),1(vimeo.com) */
-	function preloadAjax(s, id) {
+	function preloadAjax(index, id) {
 		var url, params;
-		$(loadingIndicator).show();
 		params = {
 			type: 'GET',
 			dataType: 'jsonp',
 			timeout: 2000,
 			error: function(x, t) {
 				if (t != "abort") {
-					loadError = true;
-					animateBox();
+					resources[index].error = true;
+					loaded(index);
 				}
 			}};
 
-		if (s == 0) {
+		if (resources[index].type == "youtube") {
 			url = 'http://gdata.youtube.com/feeds/api/videos/'+id+'?v=2&alt=jsonc';
 			params.success = function(r) {
-					if ((!r.error) && (r.data) && (r.data.accessControl.embed == "allowed"))
-						videoWidescreen = (r.data.aspectRatio == "widescreen");
-					else
-						loadError = true;
-					animateBox();
+					if ((!r.error) && (r.data) && (r.data.accessControl.embed == "allowed")) {
+						var w = (r.data.aspectRatio == "widescreen");
+						resources[index].width = Math.round(options.ytPlayerHeight*((w) ? (16.0/9.0) : (4.0/3.0)));
+						resources[index].height = options.ytPlayerHeight;
+					} else
+						resources[index].error = true;
+					loaded(index);
 				};
-		} else if (s == 1) {
+		} else if (resources[index].type == "vimeo") {
 			url = 'http://vimeo.com/api/v2/video/'+id+'.json';
 			params.success = function(r) {
 				if (r.length) {
 					if ((r[0].embed_privacy == 'anywhere') || (r[0].embed_privacy == 'approved')) {
-						resourceWidth = r[0].width || 0;
-						resourceHeight = r[0].height || 0;
+						resources[index].width = r[0].width || options.defWidth;
+						resources[index].height = r[0].height || options.defHeight;
 					} else {
-						loadError = true;
+						resources[index].error = true;
 					}
 				}
-				animateBox();
+				loaded(index);
 			};
 		}
-		ajaxReq = $.ajax(url, params);
+		$.ajax(url, params);
 	}
 	
 	/* limits dimensions */
