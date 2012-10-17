@@ -27,6 +27,19 @@ if (!/android|iphone|ipod|series60|symbian|windows ce|blackberry|msie 6/i.test(n
 		// new method
 		$("a.lightbox").easybox({/* custom options here */}, null, function(el) {
 			return (this == el) || ((this.className.indexOf("lightbox") != -1) && (this.hasAttribute("data-group")) && (this.getAttribute("data-group") == el.getAttribute("data-group")));
+		}, function(link) {
+			var opts = {};
+			// check for dynamic options inside html
+			if ($('#easyOptions').length) {
+				var o = $.parseJSON($('#easyOptions').html());
+				var g = link.getAttribute("data-group");
+				$.each(o, function(key, val) {
+					if ((key == 'global') || ((typeof g == 'string') && (key == g))) {
+						opts = $.extend(opts, val);
+					}
+				});
+			}
+			return opts;
 		});
 	});
 }

@@ -103,7 +103,7 @@
 		             This function must not return true when the rel tags of the DOM element and *this* are not equal.
 		rel:         EasyBox looks for this in #easyOptions tags
 	*/
-	$.fn.easybox = function(_options, linkMapper, linksFilter) {
+	$.fn.easybox = function(_options, linkMapper, linksFilter, dynamicOptions) {
 		linkMapper = linkMapper || function(el) {
 			var obj = {url: el.href, caption: el.title};
 			if (el.hasAttribute("data-width")) obj.width = el.getAttribute("data-width");
@@ -113,6 +113,10 @@
 
 		linksFilter = linksFilter || function(el) {
 			return (this == el);
+		};
+		
+		dynamicOptions = dynamicOptions || function(link) {
+			return {};
 		};
 
 		var links = this;
@@ -129,18 +133,7 @@
 				filteredLinks[i] = linkMapper(filteredLinks[i], i);
 			}
 
-		
-			// check for dynamic options inside html
-			if ($('#easyOptions').length) {
-				var rel = $(link).attr('rel') || null;
-				var o = $.parseJSON($('#easyOptions').html());
-				$.each(o, function(key, val) {
-					if ((key == 'global') || ((typeof rel == 'string') && (key == rel))) {
-						_options = $.extend(_options, val);
-					}
-				});
-			}
-			return $.easybox(filteredLinks, startIndex, _options);
+			return $.easybox(filteredLinks, startIndex, $.extend({}, _options, dynamicOptions(link)));
 		});
 	};
 

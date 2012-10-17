@@ -18,14 +18,17 @@ ul#gallery li { display: block; float: left; margin: 0 4px 4px 0; }
 ul#gallery li img { display: block; padding: 0; margin: 0; }
 #ebeffects a { display: block; margin-bottom: 8px; padding: 0 10px; line-height: 32px; height: 32px; background-color: #c0c0c0; color: #fff; }
 </style>
+<script type="application/json" id="easyOptions">
+{"gallery1":{"slideshow": 5000, "autoClose": 5000},"lightbox-vimeo1": {"loopVideos": true},"lightbox-gallery2": {"slideshow": 5000, "autoClose": 5000},"lightbox-vimeo2": {"loopVideos": true},"lightbox-slide": {"slideshow": 10000}}
+</script>
 <script type="text/javascript">
 (function($) {
-	var s, opts, dragdrop, opacity, resize, easing, fade, caption;
+	var dragdrop, opacity, resize, easing, fade, caption;
 	var overlayLink, resizeLink, easingLink, fadeLink, captionLink, dragdropLink;
 	
 	$(function() {
 		opts = $('<script type="application/json" id="easyOptions" />').appendTo("body")[0];
-		s = ',"lightbox-gallery1":{"slideshow": 5000, "autoClose": 5000},"lightbox-vimeo1": {"loopVideos": true},"lightbox-gallery2": {"slideshow": 5000, "autoClose": 5000},"lightbox-vimeo2": {"loopVideos": true},"lightbox-slide": {"slideshow": 10000}';
+		s = ',';
 		
 		$("#ebeffects").append(
 				overlayLink = $('<a href="#" title="overlay opacity" />').click(overlayBtn)[0],
@@ -44,11 +47,14 @@ ul#gallery li img { display: block; padding: 0; margin: 0; }
 		dragdropBtn();
 		compile();
 		
-		$.easybox(['#hello1', '#hello2', '#hello3'], 0, {hideBottom: true, noNavigation: true, noClose: true, slideshow: 1000, autoClose: 1000});
+		$.easybox([{url: '#hello1'}, {url: '#hello2'}, {url: '#hello3'}], 0, {hideBottom: true, noNavigation: true, noClose: true, slideshow: 1000, autoClose: 1000});
+		$("a.slideshow").click(function() {
+			$.easybox([{url: '#container1'}, {url: '#container2'}, {url: '#container3'}, {url: '#container4'}], 0, {});
+		});
 	});
 	
 	function compile() {
-		$(opts).html('{"global":{"overlayOpacity": '+opacity+', "resizeDuration": '+resize+', "resizeEasing": "'+easing+'", "fadeDuration": '+fade+', "captionFadeDuration": '+caption+', "dragDrop": '+dragdrop+'}'+s+'}');
+		$.easybox.defaults({overlayOpacity: opacity, resizeDuration: resize, resizeEasing: easing, fadeDuration: fade, captionFadeDuration: caption, dragDrop: dragdrop});
 	}
 	
 	function overlayBtn() {
@@ -111,10 +117,10 @@ ul#gallery li img { display: block; padding: 0; margin: 0; }
 <h2>Examples</h2>
 <h3>Images</h3>
 <p><ul id="gallery">
-<li><a href="img/example1.jpg" title="Image 1 with a fucking fucking fucking fucking long unbelievable long caption you son of a bitch :D" class="lightbox" data-lightbox="gallery1"><img src="img/example1thmb.jpg" /></a></li>
-<li><a href="img/example2.gif" title="Image 2" class="lightbox" data-lightbox="gallery1"><img src="img/example2thmb.jpg" /></a></li>
-<li><a href="img/example3.png" title="Image 3" class="lightbox" data-lightbox="gallery1"><img src="img/example3thmb.jpg" /></a></li>
-<li><a href="img/example4.jpg" title="Image 4" class="lightbox" data-lightbox="gallery1"><img src="img/example4thmb.jpg" /></a></li>
+<li><a href="img/example1.jpg" title="Image 1" class="lightbox" data-group="gallery1"><img src="img/example1thmb.jpg" /></a></li>
+<li><a href="img/example2.gif" title="Image 2" class="lightbox" data-group="gallery1"><img src="img/example2thmb.jpg" /></a></li>
+<li><a href="img/example3.png" title="Image 3" class="lightbox" data-group="gallery1"><img src="img/example3thmb.jpg" /></a></li>
+<li><a href="img/example4.jpg" title="Image 4" class="lightbox" data-group="gallery1"><img src="img/example4thmb.jpg" /></a></li>
 </ul></p>
 <hr />
 <h3>Change effects</h3>
@@ -122,15 +128,10 @@ ul#gallery li img { display: block; padding: 0; margin: 0; }
 </div>
 <hr />
 <h3>Various elements</h3>
-<p><a href="http://www.youtube.com/watch?v=XJFmh6W1Jjo" rel="lightbox" title="Example YouTube video">Click here</a> to view a YouTube video inside EasyBox.</p>
-<p><a href="http://vimeo.com/27359051" rel="lightbox-vimeo1" title="Example Vimeo video">Click here</a> to view a Vimeo video inside EasyBox.</p>
-<p><a href="http://www.example.com" rel="lightbox" title="Example iFrame">Click here</a> to view an iFrame inside EasyBox.</p>
-<p><a href="#container1" rel="lightbox-slide" title="EasyBox features">Click here</a> to view an inline element inside EasyBox.</p>
-<div style="display: none">
-<a href="#container2" rel="lightbox-slide" title="Tested browsers"></a>
-<a href="#container3" rel="lightbox-slide" title="What makes EasyBox different?"></a>
-<a href="#container4" rel="lightbox-slide" title="Credits"></a>
-</div>
+<p><a href="http://www.youtube.com/watch?v=XJFmh6W1Jjo" class="lightbox" title="Example YouTube video">Click here</a> to view a YouTube video inside EasyBox.</p>
+<p><a href="http://vimeo.com/27359051" class="lightbox" title="Example Vimeo video">Click here</a> to view a Vimeo video inside EasyBox.</p>
+<p><a href="http://www.example.com" class="lightbox" title="Example iFrame">Click here</a> to view an iFrame inside EasyBox.</p>
+<p><a href="#" class="slideshow" title="EasyBox features">Click here</a> to view an inline element inside EasyBox.</p>
 </div>
 <div class="container" id="container1" style="display:none;width:320px;height:240px">
 <h1>EasyBox features</h1>
