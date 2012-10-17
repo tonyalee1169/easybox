@@ -51,13 +51,12 @@
 	border: 1px solid #fff;
 }
 
-#easyLoadingIndicator, #easyErrorIndicator {
-	position: relative;
-}
 /*
 	Loading class
 */
 #easyLoadingIndicator {
+	position: relative;
+	left: 50%; top: 50%;
 	width: 32px;
 	height: 32px;
 	margin-left: -16px;
@@ -68,12 +67,8 @@
 /*
 	Error class
 */
-#easyErrorIndicator {
-	width: 32px;
-	height: 32px;
-	margin-left: -16px;
-	margin-top: -16px;
-	background: url(error.png) no-repeat;
+#easyContainer.error {
+	background: url(error.png) no-repeat center;
 }
 
 /*

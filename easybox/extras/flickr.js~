@@ -34,8 +34,8 @@
 if (!/android|iphone|ipod|series60|symbian|windows ce|blackberry|msie 6/i.test(navigator.userAgent)) {
 	jQuery(function($) {
 		$("a[href^='http://www.flickr.com/photos/'] > img:first-child[src]").parent().easybox({/* custom options here */}, function(el) {
-			return {url: el.firstChild.src.replace(/_[mts]\.(\w+)$/, ".$1"),
-				caption: (el.title || el.firstChild.alt) + '<br /><a href="' + el.href + '">Flickr page</a>'};
+			return [el.firstChild.src.replace(/_[mts]\.(\w+)$/, ".$1"),
+				(el.title || el.firstChild.alt) + '<br /><a href="' + el.href + '">Flickr page</a>'];
 		});
 	});
 }

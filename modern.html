@@ -15,6 +15,9 @@ ul#gallery { padding: 0; margin: 0; list-style: none; }
 ul#gallery li { display: block; float: left; margin: 0 4px 4px 0; }
 ul#gallery li img { display: block; padding: 0; margin: 0; }
 </style>
+<script type="application/json" id="easyOptions">
+{"gallery1":{"slideshow": 5000, "autoClose": 5000},"lightbox-vimeo1": {"loopVideos": true},"lightbox-gallery2": {"slideshow": 5000, "autoClose": 5000},"lightbox-vimeo2": {"loopVideos": true},"lightbox-slide": {"slideshow": 10000}}
+</script>
 </head>
 <body>
 <div id="wrapper">
@@ -23,20 +26,21 @@ ul#gallery li img { display: block; padding: 0; margin: 0; }
 <p><ul><li>displaying YouTube and Vimeo videos,</li>
 <li>displaying inline content,</li>
 <li>displaying iFrames and</li>
-<li>better animations</li></ul></p>
+<li>better animations</li>
+<li>Theme support</li></ul></p>
 <h2>Examples</h2>
 <h3>Images</h3>
 <p><ul id="gallery">
-<li><a href="img/example1.jpg" title="Image 1 with a fucking fucking fucking fucking long unbelievable long caption you son of a bitch :D" class="lightbox" data-lightbox="gallery1"><img src="img/example1thmb.jpg" /></a></li>
-<li><a href="img/example2.gif" title="Image 2" class="lightbox" data-lightbox="gallery1"><img src="img/example2thmb.jpg" /></a></li>
-<li><a href="img/example3.png" title="Image 3" class="lightbox" data-lightbox="gallery1"><img src="img/example3thmb.jpg" /></a></li>
-<li><a href="img/example4.jpg" title="Image 4" class="lightbox" data-lightbox="gallery1"><img src="img/example4thmb.jpg" /></a></li>
+<li><a href="img/example1.jpg" title="Image 1" class="lightbox" data-group="gallery1"><img src="img/example1thmb.jpg" /></a></li>
+<li><a href="img/example2.gif" title="Image 2" class="lightbox" data-group="gallery1"><img src="img/example2thmb.jpg" /></a></li>
+<li><a href="img/example3.png" title="Image 3" class="lightbox" data-group="gallery1"><img src="img/example3thmb.jpg" /></a></li>
+<li><a href="img/example4.jpg" title="Image 4" class="lightbox" data-group="gallery1"><img src="img/example4thmb.jpg" /></a></li>
 </ul></p>
 <hr />
 <h3>Various elements</h3>
-<p><a href="http://www.youtube.com/watch?v=XJFmh6W1Jjo" rel="lightbox" title="Example YouTube video">Click here</a> to view a YouTube video inside EasyBox.</p>
-<p><a href="http://vimeo.com/27359051" rel="lightbox-vimeo1" title="Example Vimeo video">Click here</a> to view a Vimeo video inside EasyBox.</p>
-<p><a href="http://www.example.com" rel="lightbox" title="Example iFrame">Click here</a> to view an iFrame inside EasyBox.</p>
+<p><a href="http://www.youtube.com/watch?v=XJFmh6W1Jjo" class="lightbox" title="Example YouTube video">Click here</a> to view a YouTube video inside EasyBox.</p>
+<p><a href="http://vimeo.com/27359051" class="lightbox" title="Example Vimeo video">Click here</a> to view a Vimeo video inside EasyBox.</p>
+<p><a href="http://www.example.com" class="lightbox" title="Example iFrame">Click here</a> to view an iFrame inside EasyBox.</p>
 </div>
 </body>
 </html>
