@@ -25,14 +25,14 @@
 
 (function($) {
 	// Global variables
-	var defaults, options, resources, activeIndex = -1, prevIndex, nextIndex, centerWidth, centerHeight,
+	var defaults, options, resources, activeIndex = -1, prevIndex, nextIndex, centerSize,
 		hiddenElements = [], slideshowDirection = false, slideshowOff = false,
 	// drag and drop vars
 		dragging = false, dragOffX = 0, dragOffY = 0,
 	// loading requisites
 		busy = false, inlineObj = null, inlineParent = null, inlineDisplay = null, busyTimeout = null, slideshowTimeout = null, closeTimeout = null,
 	// DOM elements
-		overlay, center, container, navLinks, prevLink, nextLink, slideLink, closeLink, bottom, caption, number, loadingIndicator, errorIndicator;
+		overlay, center, container, navLinks, prevLink, nextLink, slideLink, closeLink, bottom, caption, number, loadingIndicator;
 
 	/*
 		Initialization
@@ -41,8 +41,7 @@
 		// set defaults
 		defaults = {
 			loop: false,                  // navigate between first and last image
-			loopVideos: false,            // loop videos
-			dynOpts: true,                // checks for a <div id="prefix-options">
+			preloadNext: true,            // preloads previous and next resources if true
 			dragDrop: true,               // enable window drag and drop
 			hideBottom: false,            // hide bottom container
 			hideCaption: false,           // hide caption and number
@@ -53,15 +52,10 @@
 			resizeDuration: 400,          // box resize duration
 			resizeEasing: 'easybox',      // resize easing method; 'swing' = default
 			fadeDuration: 400,            // image fade-in duration
-			initWidth: 250,               // width of the box in initial or error state
-			initHeight: 250,              // height of the box in initial or error state
-			defWidth: 960,                // default content width
-			defHeight: 720,               // default content height
-			closeWidth: 128,              // width the box fades to when closing
-			closeHeight: 128,             // height the box fades to when closing
-			maxWidth: 1280,               // maximum content width
-			maxHeight: 720,               // maximum content height
-			maxScreenFill: 0.7,           // content width/height are limited to screen width/height * x; 0 = disabled
+			initCenterSize: [250, 250],         // initial size of window
+			errorSize: [320, 180],        // error container size
+			defaultContentSize: [960, 720],
+			maximumContentSize: [1280, 720],
 			ytPlayerHeight: 480,          // youtube player height; 720, 480, 360, 240
 			ytPlayerTheme: 'light,white', // youtube player theme; dark/light,red/white; 
 			captionFadeDuration: 200,     // caption fade duration
@@ -81,7 +75,6 @@
 				overlay = $('<div id="easyOverlay" />').click(close)[0],
 				center = $('<div id="easyCenter" />').append([
 					container = $('<div id="easyContainer" />')[0],
-					errorIndicator = $('<div id="easyErrorIndicator" />')[0],
 					loadingIndicator = $('<div id="easyLoadingIndicator" />')[0],
 					bottom = $('<div id="easyBottom" />').append([
 						navLinks = $('<div id="easyNavigation" />').append([
@@ -138,7 +131,7 @@
 
 		
 			// check for dynamic options inside html
-			if (((_options.dynOpts) || (defaults.dynOpts)) && ($('#easyOptions').length)) {
+			if ($('#easyOptions').length) {
 				var rel = $(link).attr('rel') || null;
 				var o = $.parseJSON($('#easyOptions').html());
 				$.each(o, function(key, val) {
@@ -166,16 +159,10 @@
 		var i = 0, len;
 		resources = [];
 		for (len = _resources.length; i < len; ++i) {
-			resources.push($.extend({url: "", caption: "", width: options.defWidth, height: options.defHeight},
-						_resources[i], {type: "", loaded: false, loading: false, error: false}));
+			resources.push($.extend({url: "", caption: "", width: 0, height: 0},
+						_resources[i], {type: "", loaded: false, loading: false, error: false, obj: null}));
 		}
 		startIndex = Math.min(resources.length-1, startIndex || 0);
-
-		// get maximum content dimensions
-		if (options.maxScreenFill) {
-			options.maxWidth = Math.min(Math.round(screen.width*options.maxScreenFill), options.maxWidth);
-			options.maxHeight = Math.min(Math.round(screen.height*options.maxScreenFill), options.maxHeight);
-		}
 
 		// set loop option
 		options.loop = ((options.loop) && (resources.length > 1));
@@ -183,12 +170,12 @@
 		
 		// show slideshow button if slideshow and not disabled
 		$(slideLink).css({display: (((options.slideshow) && (resources.length > 1) && (!options.hideButtons)) ? '' : 'none')})
+		slideshowDirection = slideshowOff = false;
 		// show close button if not disabled
 		$(closeLink).css({display: ((!options.hideButtons) ? '' : 'none')})
 
 		// initializing center
-		centerWidth = options.initWidth;
-		centerHeight = options.initHeight;
+		centerSize = options.initCenterSize.slice();
 
 		setup(1);
 		stop();
@@ -203,6 +190,7 @@
 
 	$.easybox.close = autoClose;
 	$.easybox.isOpen = function() { return (activeIndex >= 0); };
+	$.easybox.defaults = function(def) { defaults = $.extend(defaults, def); }
 	
 	/*
 		Setup and unsetup function
@@ -311,10 +299,12 @@
 			// set busy timeout
 			setBusyTimeout();
 			
-			if (prevIndex >= 0)
-				load(prevIndex);
-			if (nextIndex >= 0)
-				load(nextIndex);
+			if (options.preloadNext) {
+				if (prevIndex >= 0)
+					load(prevIndex);
+				if (nextIndex >= 0)
+					load(nextIndex);
+			}
 
 			if (!resources[activeIndex].loaded)
 				$(loadingIndicator).show();
@@ -329,71 +319,55 @@
 		Called by change()
 	*/
 	function animateBox() {
-		var e, // embedded element
-		    c, // container
-		    r = resources[activeIndex];
+		var r = resources[activeIndex];
 		$(loadingIndicator).hide();
 
 		if (!r.error) {
-			var d = limitDim({w: r.width, h: r.height});
-			if (r.type == "image") {
-				e = $("<img src=\""+r.url+"\" width=\""+d.w+"\" height=\""+d.h+"\" alt=\""+r.caption+"\" />");
-			} else if (r.type == "youtube") {
-				var p = '?version=3&autohide=1&autoplay=1&rel=0'; // params
-				if ((options.ytPlayerTheme) && ((t = /^([a-z]*),([a-z]*)$/.exec(options.ytPlayerTheme)) != null))
-					p += '&theme='+t[1]+'&color='+t[2];
-				if (options.loopVideos)
-					p += '&loop=1&playlist='+r.id; // youtube glitch; needs playlist for loop
-				e = $("<iframe src=\"http://www.youtube.com/embed/"+r.id+p+"\" width=\""+d.w+"\" height=\""+d.h+"\" frameborder=\"0\"></iframe>");
-			} else if (r.type == "vimeo") {
-				var p = '?title=0&byline=0&portrait=0&autoplay=true';
-				if (options.loopVideos)
-					p += '&loop=true';
-				e = $("<iframe src=\"http://player.vimeo.com/video/"+r.id+p+"\" width=\""+d.w+"\" height=\""+d.h+"\" frameborder=\"0\"></iframe>");
-			} else if (r.type == "inline") {
+			// save original state to revert later
+			if (r.type == "inline") {
 				inlineObj = r.obj;
 				inlineParent = $(inlineObj).parent();
 				inlineDisplay = $(inlineObj).css('display');
-				e = $(inlineObj);
-			} else {
-				e = $("<iframe width=\""+d.w+"\" height=\""+d.h+"\" src=\""+r.url+"\" frameborder=\"0\"></iframe>");
 			}
 
-			// set caption and number
+			// set caption
 			if (r.caption.length)
 				$(caption).html(r.caption).css({display: ''});
-			if ((resources.length > 1) && (options.counterText.length))
-				$(number).html(options.counterText.replace(/{x}/, activeIndex + 1).replace(/{y}/, resources.length)).css({display: ''});
-			
-			$(container).width(d.w).height(d.h);
-			c = container;
+			// resize container
+			$(container).width(r.width).height(r.height);
 		} else {
-			c = errorIndicator;
-			
-			// no contents
-			e = null;
+			// error class and sizing
+			$(container).addClass("error").width(options.errorSize[0]).height(options.errorSize[1]);
 		}
+		
+		// set number text
+		if ((resources.length > 1) && (options.counterText.length))
+			$(number).html(options.counterText.replace(/{x}/, activeIndex + 1).replace(/{y}/, resources.length)).css({display: ''});
 
 		// retrieve center dimensions
-		$(c).css({visibility: "hidden", display: ""});
-		centerWidth = c.offsetWidth;
-		centerHeight = c.offsetHeight;
-		
-		// resize center
-		if ((center.offsetHeight != centerHeight) || (center.offsetWidth != centerWidth))
-			$(center).animate({height: centerHeight, marginTop: -centerHeight/2, width: centerWidth, marginLeft: -centerWidth/2}, options.resizeDuration);
+		$(container).css({visibility: "hidden", display: ""});
+		animateCenter([container.offsetWidth, container.offsetHeight], -1, options.resizeDuration);
 
 		// gets executed after animation effect
 		$(center).queue(function(next) {
-			// position and sizing
-			// append contents and fade in
-			$(c).css({display: "none", visibility: "", opacity: ""});
-			if (e != null)
-				$(e).css({display: 'block'}).appendTo(container);
-			$(c).fadeIn(options.fadeDuration, animateCaption);
+			$(container).css({visibility: "", display: "none"});
+			if (r.obj != null) $(r.obj).css({display: 'block'}).appendTo(container);
+			$(container).fadeIn(options.fadeDuration, animateCaption);
 			setTimers();
 			next();
 		});
+	}
+	
+	function animateCenter(size, opacity, duration) {
+		centerSize = size.slice();
+		var p = {};
+		
+		// resize center
+		if ((center.offsetHeight != size[1]) || (center.offsetWidth != size[0]))
+			p = {height: size[1], marginTop: -size[1]/2, width: size[0], marginLeft: -size[0]/2};
+		if (opacity > -1)
+			p.opacity = opacity;
+		$(center).animate(p, duration);
 	}
 
 	/*
@@ -414,7 +388,7 @@
 
 		// fade in
 		$(bottom).fadeIn(options.captionFadeDuration);
-		$(center).animate({height: centerHeight+bottom.offsetHeight}, options.captionFadeDuration, options.resizeEasing);
+		$(center).animate({height: centerSize[1]+bottom.offsetHeight}, options.captionFadeDuration, options.resizeEasing);
 	}
 	
 	/*
@@ -432,10 +406,10 @@
 			$(inlineParent).append($(inlineObj).css({display: inlineDisplay}));
 			inlineObj = inlineParent = inlineDisplay = null;
 		}
-		$(container).empty();
+		$(container).empty().removeClass();
 		$([center, bottom, container, prevLink, nextLink]).stop(true);
-		$(center).css({width: centerWidth, height: centerHeight, marginLeft: -centerWidth/2, marginTop: -centerHeight/2, opacity: ""});
-		$([navLinks, caption, number, container, bottom, prevLink, nextLink, errorIndicator]).css({display: 'none', opacity: ''});
+		$(center).css({width: centerSize[0], height: centerSize[1], marginLeft: -centerSize[0]/2, marginTop: -centerSize[1]/2, opacity: ""});
+		$([navLinks, caption, number, container, bottom, prevLink, nextLink]).css({display: 'none', opacity: ''});
 		$([caption, number]).removeClass().html("").css({display: ((options.hideCaption) ? 'none' : '')});
 	}
 	
@@ -462,14 +436,14 @@
 		if (activeIndex >= 0) {
 			stop();
 			activeIndex = prevIndex = nextIndex = -1;
-			slideshowDirection = slideshowOff = false;
 			
 			// resize center
 			$(overlay).stop().fadeOut(options.fadeDuration, setup);
-			$(center).animate({height: options.closeHeight, marginTop: -options.closeHeight/2, width: options.closeWidth, marginLeft: -options.closeWidth/2, opacity: 0}, options.fadeDuration, function() {
+			animateCenter(options.initCenterSize, 0, options.fadeDuration);
+			$(center).queue(function(next) {
 				dragStop();
-				$([center, prevLink, nextLink]).css({left: '', top: ''});
-				$(center).hide();
+				$(center).css({left: '', top: ''}).hide();
+				next();
 			});
 		}
 
@@ -494,42 +468,67 @@
 		Loading routines
 	*/
 	function load(index) {
-		if (resources[index].loaded)
+		var r = resources[index];
+		if (r.loaded)
 			loaded(index);
-		if (resources[index].loading)
+		if (r.loading)
 			return;
-		resources[index].loading = true;
+		r.loading = true;
 
 		if (imageLink(index)) {
-			resources[index].type = "image";
+			r.type = "image";
 			preloadImage(index);
 		} else if ((id = youtubeLink(index)) != false) {
-			resources[index].type = "youtube";
-			resources[index].id = id;
+			r.type = "youtube";
+			r.id = id;
 			preloadAjax(index);	// youtube
 		} else if ((id = vimeoLink(index)) != false) {
-			resources[index].type = "vimeo";
-			resources[index].id = id;
+			r.type = "vimeo";
+			r.id = id;
 			preloadAjax(index); // vimeo
 		} else if ((id = anchorLink(index)) != false) {
-			resources[index].type = "inline";
-			var o = $('#'+id)[0];
-			if (o) {
-			      resources[index].width = $(o).width();
-			      resources[index].height = $(o).height();
-			      resources[index].obj = o;
-			} else {
-			      resources[index].error = true;
-			}
-			  
-			loaded(index);
+			r.type = "inline";
+			r.id = id;
+			preloadInline(index);
 		} else {
+			r.type = "iframe";
 			loaded(index);
 		}
 	}
 	
 	function loaded(index) {
-		resources[index].loaded = true;
+		var r = resources[index];
+		if (!r.loaded) {
+			r.loaded = true;
+
+			// fallback to default content size
+			if ((!r.width) || (!r.height)) {
+				r.width = options.defaultContentSize[0];
+				r.height = options.defaultContentSize[1];
+			}
+			
+			// shrink
+			//TODO: optimize
+			if (r.height > options.maximumContentSize[1]) { r.width = Math.round(options.maximumContentSize[1]*r.width/r.height); r.height = options.maximumContentSize[1]; }
+			if (r.width > options.maximumContentSize[0]) { r.height = Math.round(options.maximumContentSize[0]/r.width*r.height); r.width = options.maximumContentSize[0]; }
+			
+			if (!r.error) {
+				if (r.type == "image") {
+					r.obj = $("<img src=\""+r.url+"\" width=\""+r.width+"\" height=\""+r.height+"\" alt=\""+r.caption+"\" />")[0];
+				} else if (r.type == "youtube") {
+					var p = '?version=3&autohide=1&autoplay=1&rel=0'; // params
+					if ((options.ytPlayerTheme) && ((t = /^([a-z]*),([a-z]*)$/.exec(options.ytPlayerTheme)) != null))
+						p += '&theme='+t[1]+'&color='+t[2];
+					r.obj = $("<iframe src=\"http://www.youtube.com/embed/"+r.id+p+"\" width=\""+r.width+"\" height=\""+r.height+"\" frameborder=\"0\"></iframe>")[0];
+				} else if (r.type == "vimeo") {
+					var p = '?title=0&byline=0&portrait=0&autoplay=true';
+					r.obj = $("<iframe src=\"http://player.vimeo.com/video/"+r.id+p+"\" width=\""+r.width+"\" height=\""+r.height+"\" frameborder=\"0\"></iframe>")[0];
+				} else if (r.type == "iframe") {
+					r.obj = $("<iframe width=\""+r.width+"\" height=\""+r.height+"\" src=\""+r.url+"\" frameborder=\"0\"></iframe>")[0];
+				}
+			}
+		}
+
 		if (index == activeIndex)
 			animateBox();
 	}
@@ -565,21 +564,23 @@
 	*/
 	
 	function preloadImage(index) {
+		var r = resources[index];
 		var obj = new Image();
 		obj.onload = function() {
-			resources[index].width = this.width;
-			resources[index].height = this.height;
+			r.width = r.width || this.width;
+			r.height = r.height || this.height;
 			loaded(index);
 		};
 		obj.onerror = function() {
-			resources[index].error = true;
+			r.error = true;
 			loaded(index);
 		}
-		obj.src = resources[index].url;
+		obj.src = r.url;
 	}
 	
 	/* preload ajax; s(ervice) = 0(yt.com),1(vimeo.com) */
 	function preloadAjax(index) {
+		var r = resources[index];
 		var url, params;
 		params = {
 			type: 'GET',
@@ -587,31 +588,33 @@
 			timeout: 2000,
 			error: function(x, t) {
 				if (t != "abort") {
-					resources[index].error = true;
+					r.error = true;
 					loaded(index);
 				}
 			}};
 
-		if (resources[index].type == "youtube") {
-			url = 'http://gdata.youtube.com/feeds/api/videos/'+resources[index].id+'?v=2&alt=jsonc';
-			params.success = function(r) {
-					if ((!r.error) && (r.data) && (r.data.accessControl.embed == "allowed")) {
-						var w = (r.data.aspectRatio == "widescreen");
-						resources[index].width = Math.round(options.ytPlayerHeight*((w) ? (16.0/9.0) : (4.0/3.0)));
-						resources[index].height = options.ytPlayerHeight;
+		if (r.type == "youtube") {
+			url = 'http://gdata.youtube.com/feeds/api/videos/'+r.id+'?v=2&alt=jsonc';
+			params.success = function(s) {
+					if ((!s.error) && (s.data) && (s.data.accessControl.embed == "allowed")) {
+						var w = (s.data.aspectRatio == "widescreen");
+						r.height = r.height || options.ytPlayerHeight;
+						r.width = Math.round(r.height*((w) ? (16.0/9.0) : (4.0/3.0)));
 					} else
-						resources[index].error = true;
+						r.error = true;
 					loaded(index);
 				};
-		} else if (resources[index].type == "vimeo") {
-			url = 'http://vimeo.com/api/v2/video/'+resources[index].id+'.json';
-			params.success = function(r) {
-				if (r.length) {
-					if ((r[0].embed_privacy == 'anywhere') || (r[0].embed_privacy == 'approved')) {
-						resources[index].width = r[0].width || options.defWidth;
-						resources[index].height = r[0].height || options.defHeight;
+		} else if (r.type == "vimeo") {
+			url = 'http://vimeo.com/api/v2/video/'+r.id+'.json';
+			params.success = function(s) {
+				if (s.length) {
+					if ((s[0].embed_privacy == 'anywhere') || (s[0].embed_privacy == 'approved')) {
+						if ((s[0].width) && (s[0].height)) {
+							r.width = s[0].width;
+							r.height = s[0].height;
+						}
 					} else {
-						resources[index].error = true;
+						r.error = true;
 					}
 				}
 				loaded(index);
@@ -620,17 +623,17 @@
 		$.ajax(url, params);
 	}
 	
-	/* limits dimensions */
-	function limitDim(d) {
-		if (!((d.w > 0) && (d.h > 0))) {
-			d.w = options.defWidth;
-			d.h = options.defHeight;
+	function preloadInline(index) {
+		var r = resources[index];
+		var o = $('#'+r.id)[0];
+		if (o) {
+		      r.width = r.width || $(o).width();
+		      r.height = r.height || $(o).height();
+		      r.obj = o;
+		} else {
+		      r.error = true;
 		}
-		
-		if (d.h > options.maxHeight) { d.w = Math.round(options.maxHeight*d.w/d.h); d.h = options.maxHeight; }
-		if (d.w > options.maxWidth) { d.h = Math.round(options.maxWidth/d.w*d.h); d.w = options.maxWidth; }
-		
-		return d;
+		loaded(index);
 	}
 	
 	/*

@@ -67,9 +67,7 @@
 /*
 	Error class
 */
-#easyErrorIndicator {
-	width: 320px;
-	height: 160px;
+#easyContainer.error {
 	background: url(error.png) no-repeat center;
 }
 
