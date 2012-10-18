@@ -181,6 +181,8 @@
 		return false;
 	};
 
+	$.easybox.previous = previous;
+	$.easybox.next = next;
 	$.easybox.close = autoClose;
 	$.easybox.isOpen = function() { return (activeIndex >= 0); };
 	$.easybox.defaults = function(def) { defaults = $.extend(defaults, def); }
