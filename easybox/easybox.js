@@ -25,14 +25,15 @@
 
 (function($) {
 	// Global variables
-	var defaults, options, resources, activeIndex = -1, prevIndex, nextIndex, centerSize,
-		hiddenElements = [], slideshowDirection = false, slideshowOff = false,
+	var defaults, resourceHandlers = [],
+	    options, resources, activeIndex = -1, prevIndex, nextIndex, centerSize,
+	    hiddenElements = [], slideshowDirection = false, slideshowOff = false,
 	// drag and drop vars
-		dragging = false, dragOffX = 0, dragOffY = 0,
+	    dragging = false, dragOffX = 0, dragOffY = 0,
 	// loading requisites
-		busy = false, inlineObj = null, inlineParent = null, inlineDisplay = null, busyTimeout = null, slideshowTimeout = null, closeTimeout = null,
+	    busy = false, inlineObj = null, inlineParent = null, inlineDisplay = null, busyTimeout = null, slideshowTimeout = null, closeTimeout = null,
 	// DOM elements
-		overlay, center, container, navLinks, prevLink, nextLink, slideLink, closeLink, bottom, caption, number, loadingIndicator;
+	    overlay, center, container, navLinks, prevLink, nextLink, slideLink, closeLink, bottom, caption, number, loadingIndicator;
 
 	/*
 		Initialization
@@ -94,14 +95,15 @@
 
 
 	/*
-		options:     Optional options object given to $.easybox function
-		linkMapper:  Optional function taking a link DOM element and an index as arguments and returning an array containing 2 elements:
-		             the image URL and the image caption (may contain HTML)
-		linksFilter: Optional function taking a link DOM element and an index as arguments and returning true if the element is part of
-		             the image collection that will be shown on click, false if not. "this" refers to the element that was clicked.
-		             This function must always return true when the DOM element argument is "this".
-		             This function must not return true when the rel tags of the DOM element and *this* are not equal.
-		rel:         EasyBox looks for this in #easyOptions tags
+		options:        Optional options object given to $.easybox function
+		linkMapper:     Optional function taking a link DOM element and an index as arguments and returning an array containing 2 elements:
+		                the image URL and the image caption (may contain HTML)
+		linksFilter:    Optional function taking a link DOM element and an index as arguments and returning true if the element is part of
+		                the image collection that will be shown on click, false if not. "this" refers to the element that was clicked.
+		                This function must always return true when the DOM element argument is "this".
+		                This function must not return true when the rel tags of the DOM element and *this* are not equal.
+		dynamicoptions: Optional function taking a link DOM element and returns an options object which is then added to the objects object
+		                passed as first parameter and then passed to EasyBox.
 	*/
 	$.fn.easybox = function(_options, linkMapper, linksFilter, dynamicOptions) {
 		linkMapper = linkMapper || function(el) {
@@ -152,8 +154,8 @@
 		var i = 0, len;
 		resources = [];
 		for (len = _resources.length; i < len; ++i) {
-			resources.push($.extend({url: "", caption: "", width: 0, height: 0},
-						_resources[i], {type: "", loaded: false, loading: false, error: false, obj: null}));
+			resources.push($.extend({caption: "", width: 0, height: 0},
+						_resources[i], {handler: null, loaded: false, loading: false, error: false, obj: null}));
 		}
 		startIndex = Math.min(resources.length-1, startIndex || 0);
 
@@ -181,11 +183,44 @@
 		return false;
 	};
 
+	/*
+		Previous resource
+	*/
 	$.easybox.previous = previous;
+
+	/*
+		next resource
+	*/
 	$.easybox.next = next;
+
+	/*
+		Close EasyBox if is open
+	*/
 	$.easybox.close = autoClose;
+
+	/*
+		Returns wheather EasyBox is open
+	*/
 	$.easybox.isOpen = function() { return (activeIndex >= 0); };
+
+	/*
+		Change default options
+	*/
 	$.easybox.defaults = function(def) { defaults = $.extend(defaults, def); }
+	
+	/*
+		Add a resource handler
+		
+		handler: Resource handler object
+	*/
+	$.easybox.resourceHandler = function(handler) {
+		resourceHandlers.push($.extend({
+			identify: function(resource) { return false; },
+			preLoad: function(resource, loaded) { loaded(); },
+			postLoad: function(resource) {},
+			existingDom: false
+		}, handler));
+	};
 	
 	/*
 		Setup and unsetup function
@@ -319,7 +354,7 @@
 
 		if (!r.error) {
 			// save original state to revert later
-			if (r.type == "inline") {
+			if (r.handler.existingDom) {
 				inlineObj = r.obj;
 				inlineParent = $(inlineObj).parent();
 				inlineDisplay = $(inlineObj).css('display');
@@ -377,8 +412,8 @@
 		if (((prevIndex >= 0) || (nextIndex >= 0)) && (!options.noNavigation) && (!options.hideButtons)) {
 			$(navLinks).css({display: ''});
 			$([caption, number]).addClass("nav");
-			if (prevIndex >= 0) $(prevLink).fadeIn(options.captionFadeDuration);
-			if (nextIndex >= 0) $(nextLink).fadeIn(options.captionFadeDuration);
+			if (!prevIndex) $(prevLink).addClass("disabled");
+			if (!nextIndex) $(nextLink).addClass("disabled");
 		}
 
 		// fade in
@@ -404,8 +439,9 @@
 		$(container).empty().removeClass();
 		$([center, bottom, container, prevLink, nextLink]).stop(true);
 		$(center).css({width: centerSize[0], height: centerSize[1], marginLeft: -centerSize[0]/2, marginTop: -centerSize[1]/2, opacity: ""});
-		$([navLinks, caption, number, container, bottom, prevLink, nextLink]).css({display: 'none', opacity: ''});
-		$([caption, number]).removeClass().html("").css({display: ((options.hideCaption) ? 'none' : '')});
+		$([navLinks, caption, number, container, bottom]).css({display: 'none', opacity: ''});
+		$([caption, number, prevLink, nextLink]).removeClass();
+		$([caption, number]).html("").css({display: ((options.hideCaption) ? 'none' : '')});
 	}
 	
 	function toggleSlide() {
@@ -469,166 +505,42 @@
 		if (r.loading)
 			return;
 		r.loading = true;
-
-		if (imageLink(index)) {
-			r.type = "image";
-			preloadImage(index);
-		} else if ((id = youtubeLink(index)) != false) {
-			r.type = "youtube";
-			r.id = id;
-			preloadAjax(index);	// youtube
-		} else if ((id = vimeoLink(index)) != false) {
-			r.type = "vimeo";
-			r.id = id;
-			preloadAjax(index); // vimeo
-		} else if ((id = anchorLink(index)) != false) {
-			r.type = "inline";
-			r.id = id;
-			preloadInline(index);
-		} else {
-			r.type = "iframe";
-			loaded(index);
+		
+		for (var i = resourceHandlers.length-1; i >= 0; --i) {
+			if (resourceHandlers[i].identify(r)) {
+				r.handler = resourceHandlers[i];
+				r.handler.preLoad(r, function() { loaded(index) });
+				return;
+			}
 		}
+		
+		r.error = true;
+		loaded(index);
 	}
 	
 	function loaded(index) {
 		var r = resources[index];
 		if (!r.loaded) {
 			r.loaded = true;
-
-			// fallback to default content size
-			if ((!r.width) || (!r.height)) {
-				r.width = options.defaultContentSize[0];
-				r.height = options.defaultContentSize[1];
-			}
-			
-			// shrink
-			//TODO: optimize
-			if (r.height > options.maximumContentSize[1]) { r.width = Math.round(options.maximumContentSize[1]*r.width/r.height); r.height = options.maximumContentSize[1]; }
-			if (r.width > options.maximumContentSize[0]) { r.height = Math.round(options.maximumContentSize[0]/r.width*r.height); r.width = options.maximumContentSize[0]; }
 			
 			if (!r.error) {
-				if (r.type == "image") {
-					r.obj = $("<img src=\""+r.url+"\" width=\""+r.width+"\" height=\""+r.height+"\" alt=\""+r.caption+"\" />")[0];
-				} else if (r.type == "youtube") {
-					var p = '?version=3&autohide=1&autoplay=1&rel=0'; // params
-					if ((options.ytPlayerTheme) && ((t = /^([a-z]*),([a-z]*)$/.exec(options.ytPlayerTheme)) != null))
-						p += '&theme='+t[1]+'&color='+t[2];
-					r.obj = $("<iframe src=\"http://www.youtube.com/embed/"+r.id+p+"\" width=\""+r.width+"\" height=\""+r.height+"\" frameborder=\"0\"></iframe>")[0];
-				} else if (r.type == "vimeo") {
-					var p = '?title=0&byline=0&portrait=0&autoplay=true';
-					r.obj = $("<iframe src=\"http://player.vimeo.com/video/"+r.id+p+"\" width=\""+r.width+"\" height=\""+r.height+"\" frameborder=\"0\"></iframe>")[0];
-				} else if (r.type == "iframe") {
-					r.obj = $("<iframe width=\""+r.width+"\" height=\""+r.height+"\" src=\""+r.url+"\" frameborder=\"0\"></iframe>")[0];
+				// fallback to default content size
+				if ((!r.width) || (!r.height)) {
+					r.width = options.defaultContentSize[0];
+					r.height = options.defaultContentSize[1];
 				}
+				
+				// shrink
+				//TODO: optimize
+				if (r.height > options.maximumContentSize[1]) { r.width = Math.round(options.maximumContentSize[1]*r.width/r.height); r.height = options.maximumContentSize[1]; }
+				if (r.width > options.maximumContentSize[0]) { r.height = Math.round(options.maximumContentSize[0]/r.width*r.height); r.width = options.maximumContentSize[0]; }
+				
+				r.handler.postLoad(r);
 			}
 		}
 
 		if (index == activeIndex)
 			animateBox();
-	}
-	/*
-		Link validation functions
-	*/
-	
-	/* returns true if the link is an image */
-	function imageLink(index) {
-		return /(\.jpg|\.jpeg|\.png|\.gif)$/i.test(resources[index].url);
-	}
-	
-	/* returns the youtube id if active link is a youtube link */
-	function youtubeLink(index) {
-		var r = /^http\:\/\/www\.youtube\.com\/watch\?v=([A-Za-z0-9\-_]*)(&(.*))?$/i.exec(resources[index].url);
-		return (r != null) ? r[1] : false;
-	}
-
-	/* returns the vimeo id if active link is a vimeo link */
-	function vimeoLink(index) {
-		var r = /^http\:\/\/vimeo\.com\/([0-9]*)(.*)?$/i.exec(resources[index].url);
-		return (r != null) ? r[1] : false;
-	}
-	
-	/* returns the name of an element if active link is an anchor */
-	function anchorLink(index) {
-		var r = /^(.*)\#([A-Za-z0-9\-_]*)$/i.exec(resources[index].url);
-		return ((r != null) && ($('#'+r[2]).length)) ? r[2] : false;
-	}
-	
-	/*
-		Preload functions
-	*/
-	
-	function preloadImage(index) {
-		var r = resources[index];
-		var obj = new Image();
-		obj.onload = function() {
-			r.width = r.width || this.width;
-			r.height = r.height || this.height;
-			loaded(index);
-		};
-		obj.onerror = function() {
-			r.error = true;
-			loaded(index);
-		}
-		obj.src = r.url;
-	}
-	
-	/* preload ajax; s(ervice) = 0(yt.com),1(vimeo.com) */
-	function preloadAjax(index) {
-		var r = resources[index];
-		var url, params;
-		params = {
-			type: 'GET',
-			dataType: 'jsonp',
-			timeout: 2000,
-			error: function(x, t) {
-				if (t != "abort") {
-					r.error = true;
-					loaded(index);
-				}
-			}};
-
-		if (r.type == "youtube") {
-			url = 'http://gdata.youtube.com/feeds/api/videos/'+r.id+'?v=2&alt=jsonc';
-			params.success = function(s) {
-					if ((!s.error) && (s.data) && (s.data.accessControl.embed == "allowed")) {
-						var w = (s.data.aspectRatio == "widescreen");
-						r.height = r.height || options.ytPlayerHeight;
-						r.width = Math.round(r.height*((w) ? (16.0/9.0) : (4.0/3.0)));
-					} else
-						r.error = true;
-					loaded(index);
-				};
-		} else if (r.type == "vimeo") {
-			url = 'http://vimeo.com/api/v2/video/'+r.id+'.json';
-			params.success = function(s) {
-				if (s.length) {
-					if ((s[0].embed_privacy == 'anywhere') || (s[0].embed_privacy == 'approved')) {
-						if ((s[0].width) && (s[0].height)) {
-							r.width = s[0].width;
-							r.height = s[0].height;
-						}
-					} else {
-						r.error = true;
-					}
-				}
-				loaded(index);
-			};
-		}
-		$.ajax(url, params);
-	}
-	
-	function preloadInline(index) {
-		var r = resources[index];
-		var o = $('#'+r.id)[0];
-		if (o) {
-		      r.width = r.width || $(o).width();
-		      r.height = r.height || $(o).height();
-		      r.obj = o;
-		} else {
-		      r.error = true;
-		}
-		loaded(index);
 	}
 	
 	/*

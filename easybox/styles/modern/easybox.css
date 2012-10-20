@@ -161,6 +161,10 @@
 	background: url(controls.png) no-repeat -24px -24px;
 }
 
+#easyPrevLink.disabled, #easyNextLink.disabled {
+	visibility: hidden;
+}
+
 /*
 	Slideshow button
 */
