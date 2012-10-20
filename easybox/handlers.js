@@ -27,7 +27,7 @@
 		// iframe resource handler
 		$.easybox.resourceHandler({
 			identify: function(r) {
-				return true;
+				return (r.url) ? true : false;
 			},
 			preLoad: function(r, loaded) {
 				loaded();
@@ -105,7 +105,6 @@
 		
 		// youtube video resource handler
 		$.easybox.resourceHandler({
-			height: 720,
 			identify: function(r) {
 				if (!r.url) return false;
 				var res = /^http\:\/\/www\.youtube\.com\/watch\?v=([A-Za-z0-9\-_]*)(&(.*))?$/i.exec(r.url);
@@ -148,7 +147,6 @@
 		
 		// vimeo video resource handler
 		$.easybox.resourceHandler({
-			height: 720,
 			identify: function(r) {
 				if (!r.url) return false;
 				var res =  /^http\:\/\/vimeo\.com\/([0-9]*)(.*)?$/i.exec(r.url);
@@ -187,6 +185,47 @@
 			postLoad: function(r) {
 				var p = '?title=0&byline=0&portrait=0&autoplay=true';
 				r.obj = $("<iframe src=\"http://player.vimeo.com/video/"+r.id+p+"\" width=\""+r.width+"\" height=\""+r.height+"\" frameborder=\"0\"></iframe>")[0];
+			},
+			existingDom: true
+		});
+		
+		// dailymotion video resource handler
+		$.easybox.resourceHandler({
+			identify: function(r) {
+				if (!r.url) return false;
+				var res =  /^http\:\/\/www\.dailymotion\.com\/video\/([A-Za-z0-9]*)(.*)?$/i.exec(r.url);
+				if (res != null) {
+					r.id = res[1];
+					return true;
+				}
+				return false;
+			},
+			preLoad: function(r, loaded) {
+				var params = {
+					type: 'GET',
+					dataType: 'jsonp',
+					timeout: 2000,
+					error: function(x, t) {
+						if (t != "abort") {
+							r.error = true;
+							loaded();
+						}
+					},
+					success: function(s) {
+						if (s.allow_embed) {
+							var q = s.aspect_ratio;
+							r.height = r.height || 720;
+							r.width = Math.round(r.height*q);
+						} else {
+							r.error = true;
+						}
+						loaded();
+					}};
+				$.ajax('https://api.dailymotion.com/video/'+r.id+'?fields=allow_embed,aspect_ratio', params);
+			},
+			postLoad: function(r) {
+				var p = '?autoplay=1';
+				r.obj = $("<iframe src=\"http://www.dailymotion.com/embed/video/"+r.id+p+"\" width=\""+r.width+"\" height=\""+r.height+"\" frameborder=\"0\"></iframe>")[0];
 			},
 			existingDom: true
 		});
