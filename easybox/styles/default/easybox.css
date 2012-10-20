@@ -146,6 +146,10 @@
 	outline: none;
 }
 
+#easyPrevLink.disabled, #easyNextLink.disabled {
+	visibility: hidden;
+}
+
 /*
 	Slideshow button
 */
