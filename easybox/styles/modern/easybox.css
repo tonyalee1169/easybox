@@ -145,6 +145,10 @@
 	background: url(controls.png) no-repeat 0px -24px;
 }
 
+#easyPrevLink.disabled {
+	background: url(controls.png) no-repeat 0px -48px;
+}
+
 /*
 	Next button
 */
@@ -159,6 +163,10 @@
 
 #easyNextLink:hover {
 	background: url(controls.png) no-repeat -24px -24px;
+}
+
+#easyNextLink.disabled {
+	background: url(controls.png) no-repeat -24px -48px;
 }
 
 /*
