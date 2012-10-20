@@ -145,6 +145,10 @@
 	background: url(controls.png) no-repeat 0px -24px;
 }
 
+#easyPrevLink.disabled {
+	background: url(controls.png) no-repeat 0px -48px;
+}
+
 /*
 	Next button
 */
@@ -161,8 +165,8 @@
 	background: url(controls.png) no-repeat -24px -24px;
 }
 
-#easyPrevLink.disabled, #easyNextLink.disabled {
-	visibility: hidden;
+#easyNextLink.disabled {
+	background: url(controls.png) no-repeat -24px -48px;
 }
 
 /*

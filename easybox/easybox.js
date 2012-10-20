@@ -412,8 +412,8 @@
 		if (((prevIndex >= 0) || (nextIndex >= 0)) && (!options.noNavigation) && (!options.hideButtons)) {
 			$(navLinks).css({display: ''});
 			$([caption, number]).addClass("nav");
-			if (!prevIndex) $(prevLink).addClass("disabled");
-			if (!nextIndex) $(nextLink).addClass("disabled");
+			if (prevIndex < 0) $(prevLink).addClass("disabled");
+			if (nextIndex < 0) $(nextLink).addClass("disabled");
 		}
 
 		// fade in
