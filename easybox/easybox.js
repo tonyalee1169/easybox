@@ -57,7 +57,7 @@
 	// drag and drop vars
 	    dragging = false, dragOffX = 0, dragOffY = 0,
 	// state variables and timeouts
-	    open = false, busy = true, slideshowTimeout = null, closeTimeout = null,
+	    open = false, busy, shown, slideshowTimeout = null, closeTimeout = null,
 	// DOM elements
 	    overlay, center, container, navLinks, prevLink, nextLink, slideLink, closeLink, bottom, caption, number, loadingIndicator;
 
@@ -169,12 +169,11 @@
 		// initializing center
 		centerSize = options.initCenterSize.slice();
 
-		setup(1);
 		stop();
+		setup(1);
 
 		$(center).show();
-		$(overlay).css("opacity", options.overlayOpacity).fadeIn(options.fadeDuration, function() {
-			busy = false;
+		$(overlay).css({opacity: options.overlayOpacity}).fadeIn(options.fadeDuration, function() {
 			change(Math.min(resources.length-1, startIndex || 0));
 		});
 
@@ -248,7 +247,6 @@
 		if (!resources[activeIndex].loaded)
 			$(loadingIndicator).show();
 		load(activeIndex);
-
 		return false;
 	}
 	
@@ -276,6 +274,7 @@
 			$(number).html(options.counterText.replace(/{x}/, activeIndex + 1).replace(/{y}/, resources.length)).css({display: ''});
 
 		// retrieve center dimensions
+		busy = true;
 		$(container).css({visibility: "hidden", display: ""});
 		animateCenter([container.offsetWidth, container.offsetHeight], -1, options.resizeDuration);
 
@@ -285,10 +284,11 @@
 			if (!r.error) {
 				$(r.obj).appendTo(container);
 				r.handler.show(r);
+				shown = true;
 			}
-			busy = false;
-			$(container).fadeIn(options.fadeDuration, animateCaption);
 			setTimers();
+			$(container).fadeIn(options.fadeDuration, animateCaption);
+			busy = false;
 			next();
 		});
 	}
@@ -302,7 +302,7 @@
 			p = {height: size[1], marginTop: -size[1]/2, width: size[0], marginLeft: -size[0]/2};
 		if (opacity > -1)
 			p.opacity = opacity;
-		$(center).animate(p, duration);
+		$(center).animate(p, duration, options.resizeEasing);
 	}
 
 	/*
@@ -319,6 +319,9 @@
 			if (prevIndex < 0) $(prevLink).addClass("disabled");
 			if (nextIndex < 0) $(nextLink).addClass("disabled");
 		}
+		
+		if (!options.hideCaption)
+			$([caption, number]).show();
 
 		// fade in
 		$(bottom).fadeIn(options.captionFadeDuration);
@@ -330,25 +333,24 @@
 		Called by close() and change()
 	*/
 	function stop() {
-		busy = true;
-
 		// reset timers
 		if (slideshowTimeout != null) {clearTimeout(slideshowTimeout); slideshowTimeout = null; }
 		if (closeTimeout != null) {clearTimeout(closeTimeout); closeTimeout = null; }
 		
 		if (activeIndex >= 0) {
 			var r = resources[activeIndex];
-			if (!r.error)
+			if ((!r.error) && (shown))
 				r.handler.hide(r);
 		}
 		
 		// reset everything
-		$(container).empty().removeClass();
-		$([center, bottom, container, prevLink, nextLink]).stop(true);
-		$(center).css({width: centerSize[0], height: centerSize[1], marginLeft: -centerSize[0]/2, marginTop: -centerSize[1]/2, opacity: ""});
-		$([navLinks, caption, number, container, bottom]).css({display: 'none', opacity: ''});
-		$([caption, number, prevLink, nextLink]).removeClass();
-		$([caption, number]).html("").css({display: ((options.hideCaption) ? 'none' : '')});
+		$([container, caption, number]).html("");
+		$(loadingIndicator).hide();
+		$([bottom, container]).stop(true, true).hide();
+		$(center).stop(true).css({width: centerSize[0], height: centerSize[1], marginLeft: -centerSize[0]/2, marginTop: -centerSize[1]/2, opacity: ""});
+		$([navLinks, caption, number]).hide();
+		$([container, caption, number, prevLink, nextLink]).removeClass();
+		shown = busy = false;
 	}
 	
 	/*
@@ -365,7 +367,7 @@
 		
 		// resize center
 		$(overlay).stop().fadeOut(options.fadeDuration);
-		animateCenter(options.initCenterSize, 0, options.fadeDuration);
+		animateCenter([centerSize[0]/2, centerSize[1]/2], 0, options.fadeDuration);
 		$(center).queue(function(next) {
 			$(center).css({left: '', top: ''}).hide();
 			open = false;
@@ -395,7 +397,6 @@
 	}
 
 	function toggleSlide() {
-		if (busy) return false;
 		slideshowOff = (!slideshowOff);
 		slideshowDirection = false;
 		$(slideLink).toggleClass('disabled', slideshowOff);
