@@ -27,29 +27,20 @@
 		// iframe resource handler
 		$.easybox.resourceHandler({
 			identify: function(r) {
-				return true;
-			},
-			preLoad: function(r, loaded) {
-				loaded();
+				return (r.url) ? true : false;
 			},
 			postLoad: function(r) {
 				r.obj = $("<iframe width=\""+r.width+"\" height=\""+r.height+"\" src=\""+r.url+"\" frameborder=\"0\"></iframe>")[0];
-			},
-			existingDom: false
-		});
+			}		});
 		
 		// html resource handler
 		$.easybox.resourceHandler({
 			identify: function(r) {
 				return (r.html) ? true : false;
 			},
-			preLoad: function(r, loaded) {
-				loaded();
-			},
 			postLoad: function(r) {
 				r.obj = $('<div style="width:'+r.width+'px;height:'+r.height+'px">'+r.html+'</div>')[0];
-			},
-			existingDom: false
+			}
 		});
 		
 		// inline resource handler
@@ -74,8 +65,16 @@
 				}
 				loaded();
 			},
-			postLoad: function(r) {},
-			existingDom: true
+			postLoad: function(r) {
+				r.parent = $(r.obj).parent()[0];
+				r.display = $(r.obj).css('display');
+			},
+			show: function(r) {
+				$(r.obj).css('display', 'block');
+			},
+			hide: function(r) {
+				$(r.parent).append($(r.obj).css('display', r.display));
+			}
 		});
 		
 		// image resource handler
@@ -98,14 +97,33 @@
 				obj.src = r.url;
 			},
 			postLoad: function(r) {
-				r.obj = $("<img src=\""+r.url+"\" width=\""+r.width+"\" height=\""+r.height+"\" alt=\""+r.caption+"\" />")[0];
+				r.obj = $("<img src=\""+r.url+"\" style=\"display:block;width:"+r.width+"px;height:"+r.height+"px\" alt=\""+r.caption+"\" />")[0];
+			}
+		});
+		
+		// video resource handler
+		$.easybox.resourceHandler({
+			identify: function(r) {
+				if (!r.url) return false;
+				return /(\.mpg|\.mpeg|\.mp4|\.ogv|\.webm|\.flv)$/i.test(r.url);
 			},
-			existingDom: true
+			postLoad: function(r) {
+				r.obj = $('<div style="overflow:hidden;width:'+r.width+'px;height:'+r.height+'px" />')[0];
+			},
+
+			show: function(r) {
+				// check for flowplayer
+				var p = (!!$.fn.flowplayer);
+
+				$(r.obj).append($("<video src=\""+r.url+"\" width=\""+r.width+"\" height=\""+r.height+"\""+(!p ? " controls=\"controls\"" : "")+" />"));
+
+				if (p)
+					$(r.obj).flowplayer();
+			}
 		});
 		
 		// youtube video resource handler
 		$.easybox.resourceHandler({
-			height: 720,
 			identify: function(r) {
 				if (!r.url) return false;
 				var res = /^http\:\/\/www\.youtube\.com\/watch\?v=([A-Za-z0-9\-_]*)(&(.*))?$/i.exec(r.url);
@@ -142,13 +160,11 @@
 				//if ((options.ytPlayerTheme) && ((t = /^([a-z]*),([a-z]*)$/.exec(options.ytPlayerTheme)) != null))
 				//	p += '&theme='+t[1]+'&color='+t[2];
 				r.obj = $("<iframe src=\"http://www.youtube.com/embed/"+r.id+p+"\" width=\""+r.width+"\" height=\""+r.height+"\" frameborder=\"0\"></iframe>")[0];
-			},
-			existingDom: true
+			}
 		});
 		
 		// vimeo video resource handler
 		$.easybox.resourceHandler({
-			height: 720,
 			identify: function(r) {
 				if (!r.url) return false;
 				var res =  /^http\:\/\/vimeo\.com\/([0-9]*)(.*)?$/i.exec(r.url);
@@ -187,8 +203,47 @@
 			postLoad: function(r) {
 				var p = '?title=0&byline=0&portrait=0&autoplay=true';
 				r.obj = $("<iframe src=\"http://player.vimeo.com/video/"+r.id+p+"\" width=\""+r.width+"\" height=\""+r.height+"\" frameborder=\"0\"></iframe>")[0];
+			}
+		});
+		
+		// dailymotion video resource handler
+		$.easybox.resourceHandler({
+			identify: function(r) {
+				if (!r.url) return false;
+				var res =  /^http\:\/\/www\.dailymotion\.com\/video\/([A-Za-z0-9]*)(.*)?$/i.exec(r.url);
+				if (res != null) {
+					r.id = res[1];
+					return true;
+				}
+				return false;
 			},
-			existingDom: true
+			preLoad: function(r, loaded) {
+				var params = {
+					type: 'GET',
+					dataType: 'jsonp',
+					timeout: 2000,
+					error: function(x, t) {
+						if (t != "abort") {
+							r.error = true;
+							loaded();
+						}
+					},
+					success: function(s) {
+						if (s.allow_embed) {
+							var q = s.aspect_ratio;
+							r.height = r.height || 720;
+							r.width = Math.round(r.height*q);
+						} else {
+							r.error = true;
+						}
+						loaded();
+					}};
+				$.ajax('https://api.dailymotion.com/video/'+r.id+'?fields=allow_embed,aspect_ratio', params);
+			},
+			postLoad: function(r) {
+				var p = '?autoplay=1';
+				r.obj = $("<iframe src=\"http://www.dailymotion.com/embed/video/"+r.id+p+"\" width=\""+r.width+"\" height=\""+r.height+"\" frameborder=\"0\"></iframe>")[0];
+			}
 		});
 	});
 })(jQuery);

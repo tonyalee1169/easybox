@@ -24,14 +24,40 @@
 */
 
 (function($) {
-	// Global variables
-	var defaults, resourceHandlers = [],
-	    options, resources, activeIndex = -1, prevIndex, nextIndex, centerSize,
-	    hiddenElements = [], slideshowDirection = false, slideshowOff = false,
+	// Global options
+	var defaults = {
+		loop: false,                  // navigate between first and last image
+		preloadNext: true,            // preloads previous and next resources if true
+		dragDrop: true,               // enable window drag and drop
+		hideBottom: false,            // hide bottom container
+		hideCaption: false,           // hide caption and number
+		hideButtons: false,           // hide buttons
+		noNavigation: false,          // disable navigation
+		noClose: false,               // disable close, only autoclose works
+		overlayOpacity: 0.8,          // opacity of the overlay from 0 to 1
+		resizeDuration: 400,          // box resize duration
+		resizeEasing: 'easybox',      // resize easing method; 'swing' = default
+		fadeDuration: 400,            // image fade-in duration
+		initCenterSize: [250, 250],         // initial size of window
+		errorSize: [320, 180],        // error container size
+		defaultContentSize: [960, 720],
+		maximumContentSize: [1280, 720],
+		captionFadeDuration: 200,     // caption fade duration
+		slideshow: 0,                 // slideshow interval; 0 = disable slideshows
+		autoClose: 0,                 // close after x milliseconds; 0 = disable autoClose
+		counterText: "{x} of {y}",    // counter text; {x} replaced with current image number; {y} replaced with total image count
+		closeKeys: [27],              // array of keycodes to close easybox, default: Esc (27), 'x' (88), 'c' (67)
+		previousKeys: [37],           // array of keycodes to navigate to the previous image, default: Left arrow (37), 'p' (80)
+		nextKeys: [39],               // array of keycodes to navigate to the next image, default: Right arrow (39), 'n' (78)
+		preventOtherKeys: true        // prevents handling of other keys
+		};
+	
+	var resourceHandlers = [], options, resources, activeIndex = -1, prevIndex, nextIndex, centerSize,
+	    hiddenElements = [], slideshowDirection, slideshowOff,
 	// drag and drop vars
 	    dragging = false, dragOffX = 0, dragOffY = 0,
-	// loading requisites
-	    busy = false, inlineObj = null, inlineParent = null, inlineDisplay = null, busyTimeout = null, slideshowTimeout = null, closeTimeout = null,
+	// state variables and timeouts
+	    open = false, busy, shown, slideshowTimeout = null, closeTimeout = null,
 	// DOM elements
 	    overlay, center, container, navLinks, prevLink, nextLink, slideLink, closeLink, bottom, caption, number, loadingIndicator;
 
@@ -39,41 +65,9 @@
 		Initialization
 	*/
 	$(function() {
-		// set defaults
-		defaults = {
-			loop: false,                  // navigate between first and last image
-			preloadNext: true,            // preloads previous and next resources if true
-			dragDrop: true,               // enable window drag and drop
-			hideBottom: false,            // hide bottom container
-			hideCaption: false,           // hide caption and number
-			hideButtons: false,           // hide buttons
-			noNavigation: false,          // disable navigation
-			noClose: false,               // disable close, only autoclose works
-			overlayOpacity: 0.8,          // opacity of the overlay from 0 to 1
-			resizeDuration: 400,          // box resize duration
-			resizeEasing: 'easybox',      // resize easing method; 'swing' = default
-			fadeDuration: 400,            // image fade-in duration
-			initCenterSize: [250, 250],         // initial size of window
-			errorSize: [320, 180],        // error container size
-			defaultContentSize: [960, 720],
-			maximumContentSize: [1280, 720],
-			ytPlayerHeight: 480,          // youtube player height; 720, 480, 360, 240
-			ytPlayerTheme: 'light,white', // youtube player theme; dark/light,red/white; 
-			captionFadeDuration: 200,     // caption fade duration
-			slideshow: 0,                 // slideshow interval; 0 = disable slideshows
-			autoClose: 0,                 // close after x milliseconds; 0 = disable autoClose
-			busyTimeout: 800,             // enables user controls after a timeout
-			counterText: "{x} of {y}",    // counter text; {x} replaced with current image number; {y} replaced with total image count
-			closeKeys: [27, 88, 67],      // array of keycodes to close easybox, default: Esc (27), 'x' (88), 'c' (67)
-			previousKeys: [37, 80],       // array of keycodes to navigate to the previous image, default: Left arrow (37), 'p' (80)
-			nextKeys: [39, 78],           // array of keycodes to navigate to the next image, default: Right arrow (39), 'n' (78)
-			preventOtherKeys: true        // prevents handling of other keys
-		};
-		
-		// append the easybox HTML code at the bottom of the document
 		$("body").append(
 			$([
-				overlay = $('<div id="easyOverlay" />').click(close)[0],
+				overlay = $('<div id="easyOverlay" />').click(userClose)[0],
 				center = $('<div id="easyCenter" />').append([
 					container = $('<div id="easyContainer" />')[0],
 					loadingIndicator = $('<div id="easyLoadingIndicator" />')[0],
@@ -82,7 +76,7 @@
 							prevLink = $('<a id="easyPrevLink" href="#" />').click(previous)[0],
 							nextLink = $('<a id="easyNextLink" href="#" />').click(next)[0]
 						])[0],
-						closeLink = $('<a id="easyCloseLink" href="#" />').click(close)[0],
+						closeLink = $('<a id="easyCloseLink" href="#" />').click(userClose)[0],
 						slideLink = $('<a id="easySlideLink" href="#" />').click(toggleSlide)[0],
 						caption = $('<div id="easyCaption" />')[0],
 						number = $('<div id="easyNumber" />')[0],
@@ -144,7 +138,7 @@
 		Opens easybox with the specified parameters
 	*/
 	$.easybox = function(_resources, startIndex, _options) {
-		if (activeIndex >= 0)
+		if (open)
 			return false;
 
 		// complete options
@@ -157,8 +151,11 @@
 			resources.push($.extend({caption: "", width: 0, height: 0},
 						_resources[i], {handler: null, loaded: false, loading: false, error: false, obj: null}));
 		}
-		startIndex = Math.min(resources.length-1, startIndex || 0);
-
+		
+		if (!resources.length)
+			return;
+		open = true;
+		
 		// set loop option
 		options.loop = ((options.loop) && (resources.length > 1));
 		options.slideshow = ((options.slideshow) && (resources.length > 1)) ? options.slideshow : 0;
@@ -172,36 +169,39 @@
 		// initializing center
 		centerSize = options.initCenterSize.slice();
 
-		setup(1);
 		stop();
+		setup(1);
 
 		$(center).show();
-		$(overlay).css("opacity", options.overlayOpacity).fadeIn(options.fadeDuration, function() {
-			change(startIndex);
+		$(overlay).css({opacity: options.overlayOpacity}).fadeIn(options.fadeDuration, function() {
+			change(Math.min(resources.length-1, startIndex || 0));
 		});
 
 		return false;
 	};
 
 	/*
-		Previous resource
+		Jump to previous resource
+		Returns true if successful, false otherwise
 	*/
-	$.easybox.previous = previous;
+	$.easybox.previous = function() { return (prevIndex >= 0) ? !previous() : false };
 
 	/*
-		next resource
+		Jump to next resource
+		Returns true if successful, false otherwise
 	*/
-	$.easybox.next = next;
+	$.easybox.next = function() { return (nextIndex >= 0) ? !next() : false };
 
 	/*
-		Close EasyBox if is open
+		Close EasyBox
+		Returns true if close, false otherwise
 	*/
-	$.easybox.close = autoClose;
+	$.easybox.close = function() { return (open) ? !close() : false };
 
 	/*
-		Returns wheather EasyBox is open
+		Returns true if EasyBox is open, false otherwise
 	*/
-	$.easybox.isOpen = function() { return (activeIndex >= 0); };
+	$.easybox.isOpen = function() { return open; };
 
 	/*
 		Change default options
@@ -215,132 +215,38 @@
 	*/
 	$.easybox.resourceHandler = function(handler) {
 		resourceHandlers.push($.extend({
-			identify: function(resource) { return false; },
+			identify: function() { return false; },
 			preLoad: function(resource, loaded) { loaded(); },
-			postLoad: function(resource) {},
-			existingDom: false
+			postLoad: function() {},
+			show: function() {},
+			hide: function() {}
 		}, handler));
 	};
-	
-	/*
-		Setup and unsetup function
-	*/
-	function setup(open) {
-		if (open) {
-			$("object:visible").add("embed").each(function(index, el) {
-				hiddenElements[index] = [el, el.style.visibility];
-				el.style.visibility = "hidden";
-			});
-		} else {
-			$.each(hiddenElements, function(index, el) {
-				el[0].style.visibility = el[1];
-			});
-			hiddenElements = [];
-		}
-
-		var fn = open ? "bind" : "unbind";
-		
-		// key handling
-		$(document)[fn]("keydown", keyDown);
-
-		// mousewheel functionality
-		if ($.fn.mousewheel)
-			$(window)[fn]('mousewheel', mouseWheel);
-
-		// drag and drop functionality
-		$(center)[fn]("mousedown", dragStart)[fn]("mousemove", dragMove)[fn]("mouseup", dragStop);
-		$(window)[fn]('mousemove', dragMove)[fn]("mouseup", dragStop);
-	}
-
-	/*
-		Key handling function
-	*/
-	function keyDown(event) {
-		var code = event.keyCode, fn = $.inArray;
-		// Prevent default keyboard action (like navigating inside the page)
-		return (busy) ? true
-			: (fn(code, options.closeKeys) >= 0) ? close()
-			: ((fn(code, options.nextKeys) >= 0) && (!options.noNavigation)) ? next()
-			: ((fn(code, options.previousKeys) >= 0) && (!options.noNavigation)) ? previous()
-			: (!options.preventOtherKeys);
-	}
-
-	/*
-		Mouse wheel handling function
-	*/
-	function mouseWheel(event, delta) {
-		return (busy) ? true
-			: ((delta > 0) && (!options.noNavigation)) ? previous()
-			: ((delta < 0) && (!options.noNavigation)) ? next()
-			: (!options.preventOtherKeys);
-	}
-			
-	/*
-		Jump to previous resource
-	*/
-	function previous() {
-		slideshowDirection = true;	// backwards
-		return change(prevIndex);
-	}
-
-	/*
-		Jump to next resource
-	*/
-	function next() {
-		slideshowDirection = false;	// forwards
-		return change(nextIndex);
-	}
-	
-	/* creates timeout for slideshow and autoclose */
-	function setTimers() {
-		if ((options.slideshow) && (!slideshowOff) && (slideshowTimeout == null)) {
-			if ((slideshowDirection) && (prevIndex >= 0)) { // backwards
-				slideshowTimeout = setTimeout(previous, options.slideshow);
-				return false;
-			} else if ((!slideshowDirection) && (nextIndex >= 0)) { // forwards
-				slideshowTimeout = setTimeout(next, options.slideshow);
-				return false;
-			}
-		}
-		
-		if ((options.autoClose) && (closeTimeout == null))
-			closeTimeout = setTimeout(autoClose, options.autoClose);
-		return false;
-	}
-	
-	function setBusyTimeout() {
-		if (options.busyTimeout) {
-			busyTimeout = setTimeout(notBusy, options.busyTimeout);
-		}
-	}
 	
 	/*
 		Change resource
 	*/
 	function change(index) {
-		if ((index >= 0) && (index < resources.length)) {
-			activeIndex = index;
-			prevIndex = (activeIndex || (options.loop ? resources.length : 0)) - 1;
-			nextIndex = ((activeIndex + 1) % resources.length) || (options.loop ? 0 : -1);
-			
-			// reset everything
-			stop();
-			
-			// set busy timeout
-			setBusyTimeout();
-			
-			if (options.preloadNext) {
-				if (prevIndex >= 0)
-					load(prevIndex);
-				if (nextIndex >= 0)
-					load(nextIndex);
-			}
+		if ((busy) || (index < 0) || (index >= resources.length))
+			return false;
 
-			if (!resources[activeIndex].loaded)
-				$(loadingIndicator).show();
-			load(activeIndex);
+		// reset everything
+		stop();
+		
+		activeIndex = index;
+		prevIndex = (activeIndex || (options.loop ? resources.length : 0)) - 1;
+		nextIndex = ((activeIndex + 1) % resources.length) || (options.loop ? 0 : -1);
+		
+		if (options.preloadNext) {
+			if (prevIndex >= 0)
+				load(prevIndex);
+			if (nextIndex >= 0)
+				load(nextIndex);
 		}
 
+		if (!resources[activeIndex].loaded)
+			$(loadingIndicator).show();
+		load(activeIndex);
 		return false;
 	}
 	
@@ -353,13 +259,6 @@
 		$(loadingIndicator).hide();
 
 		if (!r.error) {
-			// save original state to revert later
-			if (r.handler.existingDom) {
-				inlineObj = r.obj;
-				inlineParent = $(inlineObj).parent();
-				inlineDisplay = $(inlineObj).css('display');
-			}
-
 			// set caption
 			if (r.caption.length)
 				$(caption).html(r.caption).css({display: ''});
@@ -375,15 +274,21 @@
 			$(number).html(options.counterText.replace(/{x}/, activeIndex + 1).replace(/{y}/, resources.length)).css({display: ''});
 
 		// retrieve center dimensions
+		busy = true;
 		$(container).css({visibility: "hidden", display: ""});
 		animateCenter([container.offsetWidth, container.offsetHeight], -1, options.resizeDuration);
 
 		// gets executed after animation effect
 		$(center).queue(function(next) {
 			$(container).css({visibility: "", display: "none"});
-			if (r.obj != null) $(r.obj).css({display: 'block'}).appendTo(container);
-			$(container).fadeIn(options.fadeDuration, animateCaption);
+			if (!r.error) {
+				$(r.obj).appendTo(container);
+				r.handler.show(r);
+				shown = true;
+			}
 			setTimers();
+			$(container).fadeIn(options.fadeDuration, animateCaption);
+			busy = false;
 			next();
 		});
 	}
@@ -397,7 +302,7 @@
 			p = {height: size[1], marginTop: -size[1]/2, width: size[0], marginLeft: -size[0]/2};
 		if (opacity > -1)
 			p.opacity = opacity;
-		$(center).animate(p, duration);
+		$(center).animate(p, duration, options.resizeEasing);
 	}
 
 	/*
@@ -405,7 +310,6 @@
 		Called by animateBox() when finished
 	*/
 	function animateCaption() {
-		busy = false;
 		if (options.hideBottom)
 			return;
 
@@ -415,6 +319,9 @@
 			if (prevIndex < 0) $(prevLink).addClass("disabled");
 			if (nextIndex < 0) $(nextLink).addClass("disabled");
 		}
+		
+		if (!options.hideCaption)
+			$([caption, number]).show();
 
 		// fade in
 		$(bottom).fadeIn(options.captionFadeDuration);
@@ -426,24 +333,69 @@
 		Called by close() and change()
 	*/
 	function stop() {
-		// reset everything to init state
-		busy = true;
+		// reset timers
 		if (slideshowTimeout != null) {clearTimeout(slideshowTimeout); slideshowTimeout = null; }
-		if (busyTimeout != null) {clearTimeout(busyTimeout); busyTimeout = null; }
 		if (closeTimeout != null) {clearTimeout(closeTimeout); closeTimeout = null; }
-		if (inlineObj != null) {
-			// put inline object back to it's place
-			$(inlineParent).append($(inlineObj).css({display: inlineDisplay}));
-			inlineObj = inlineParent = inlineDisplay = null;
+		
+		if (activeIndex >= 0) {
+			var r = resources[activeIndex];
+			if ((!r.error) && (shown))
+				r.handler.hide(r);
 		}
-		$(container).empty().removeClass();
-		$([center, bottom, container, prevLink, nextLink]).stop(true);
-		$(center).css({width: centerSize[0], height: centerSize[1], marginLeft: -centerSize[0]/2, marginTop: -centerSize[1]/2, opacity: ""});
-		$([navLinks, caption, number, container, bottom]).css({display: 'none', opacity: ''});
-		$([caption, number, prevLink, nextLink]).removeClass();
-		$([caption, number]).html("").css({display: ((options.hideCaption) ? 'none' : '')});
+		
+		// reset everything
+		$([container, caption, number]).html("");
+		$(loadingIndicator).hide();
+		$([bottom, container]).stop(true, true).hide();
+		$(center).stop(true).css({width: centerSize[0], height: centerSize[1], marginLeft: -centerSize[0]/2, marginTop: -centerSize[1]/2, opacity: ""});
+		$([navLinks, caption, number]).hide();
+		$([container, caption, number, prevLink, nextLink]).removeClass();
+		shown = busy = false;
 	}
 	
+	/*
+		Closes the box
+	*/
+	function close() {
+		if (!open)
+			return false;
+
+		stop();
+		activeIndex = prevIndex = nextIndex = -1;
+		dragStop();
+		setup(0);
+		
+		// resize center
+		$(overlay).stop().fadeOut(options.fadeDuration);
+		animateCenter([centerSize[0]/2, centerSize[1]/2], 0, options.fadeDuration);
+		$(center).queue(function(next) {
+			$(center).css({left: '', top: ''}).hide();
+			open = false;
+			next();
+		});
+
+		return false;
+	}
+
+	/*
+		USER ACTIONS
+	*/
+
+	function previous() {
+		slideshowDirection = true;	// backwards
+		return change(prevIndex);
+	}
+
+	function next() {
+		slideshowDirection = false;	// forwards
+		return change(nextIndex);
+	}
+	
+	function userClose() {
+		if ((busy) || (options.noClose)) return false;
+		return close();
+	}
+
 	function toggleSlide() {
 		slideshowOff = (!slideshowOff);
 		slideshowDirection = false;
@@ -458,46 +410,28 @@
 	}
 
 	/*
-		Closes the box
+		TIMERS
 	*/
-	function close(a) {
-		if ((options.noClose) && (a != 1))
-			return;
-
-		if (activeIndex >= 0) {
-			stop();
-			activeIndex = prevIndex = nextIndex = -1;
-			
-			// resize center
-			$(overlay).stop().fadeOut(options.fadeDuration, setup);
-			animateCenter(options.initCenterSize, 0, options.fadeDuration);
-			$(center).queue(function(next) {
-				dragStop();
-				$(center).css({left: '', top: ''}).hide();
-				next();
-			});
+	function setTimers() {
+		if ((options.slideshow) && (!slideshowOff) && (slideshowTimeout == null)) {
+			if ((slideshowDirection) && (prevIndex >= 0)) { // backwards
+				slideshowTimeout = setTimeout(previous, options.slideshow);
+				return false;
+			} else if ((!slideshowDirection) && (nextIndex >= 0)) { // forwards
+				slideshowTimeout = setTimeout(next, options.slideshow);
+				return false;
+			}
 		}
-
+		
+		if ((options.autoClose) && (closeTimeout == null))
+			closeTimeout = setTimeout(close, options.autoClose);
 		return false;
-	}
-	
-	/*
-		Wrapper for autoclose function
-	*/
-	function autoClose() {
-		close(1);
-	}
-	
-	/*
-		Set busy to false
-	*/
-	function notBusy() {
-		busy = false;
 	}
 	
 	/*
 		Loading routines
 	*/
+	
 	function load(index) {
 		var r = resources[index];
 		if (r.loaded)
@@ -544,12 +478,69 @@
 	}
 	
 	/*
+		Event functionality
+	*/
+	
+	/*
+		Setup and unsetup method
+		Hide/unhide flash elements, bind/unbind events
+	*/
+	function setup(o) {
+		if (o) {
+			$("object:visible").add("embed").each(function(index, el) {
+				hiddenElements[index] = [el, el.style.visibility];
+				el.style.visibility = "hidden";
+			});
+		} else {
+			$.each(hiddenElements, function(index, el) {
+				el[0].style.visibility = el[1];
+			});
+			hiddenElements = [];
+		}
+
+		var fn = o ? "bind" : "unbind";
+		
+		// key handling
+		$(document)[fn]("keydown", keyDown);
+
+		// mousewheel functionality
+		if ($.fn.mousewheel)
+			$(window)[fn]('mousewheel', mouseWheel);
+
+		// drag and drop functionality
+		$(center)[fn]("mousedown", dragStart)[fn]("mousemove", dragMove)[fn]("mouseup", dragStop);
+		$(window)[fn]('mousemove', dragMove)[fn]("mouseup", dragStop);
+	}
+
+	/*
+		Key handling function
+	*/
+	function keyDown(event) {
+		var code = event.keyCode, fn = $.inArray;
+		// Prevent default keyboard action (like navigating inside the page)
+		return (fn(code, options.closeKeys) >= 0) ? userClose()
+			: ((fn(code, options.nextKeys) >= 0) && (!options.noNavigation)) ? next()
+			: ((fn(code, options.previousKeys) >= 0) && (!options.noNavigation)) ? previous()
+			: (!options.preventOtherKeys);
+	}
+
+	/*
+		Mouse wheel handling function
+	*/
+	function mouseWheel(event, delta) {
+		return ((delta > 0) && (!options.noNavigation)) ? previous()
+			: ((delta < 0) && (!options.noNavigation)) ? next()
+			: false;
+	}
+	
+	/*
 		Drag and drop functions
 	*/
+	
 	function dragStart(e) {
 		if (options.dragDrop) {
 			dragging = true;
-			$([center, prevLink, nextLink]).css({cursor: 'pointer'});
+			$(center).css({cursor: 'pointer'});
 			dragOffX = e.pageX - $(this).position().left;
 			dragOffY = e.pageY - $(this).position().top;
 			return false;
@@ -569,8 +560,7 @@
 	function dragStop(e) {
 		if (dragging) {
 			dragging = false;
-			$([center, prevLink, nextLink]).css({cursor: ''});
-			return false;
+			$(center).css({cursor: ''});
 		}
 		return true;
 	}
