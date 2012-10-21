@@ -66,6 +66,10 @@
 	background: url(loading.gif) no-repeat;
 }
 
+#easyContainer {
+	overflow: hidden;
+}
+
 /*
 	Error class
 */
