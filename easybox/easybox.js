@@ -218,6 +218,7 @@
 			identify: function() { return false; },
 			preLoad: function(resource, loaded) { loaded(); },
 			postLoad: function() {},
+			abort: function() {},
 			show: function() {},
 			hide: function() {}
 		}, handler));
@@ -239,14 +240,14 @@
 		
 		if (options.preloadNext) {
 			if (prevIndex >= 0)
-				load(prevIndex);
+				load(resources[prevIndex]);
 			if (nextIndex >= 0)
-				load(nextIndex);
+				load(resources[nextIndex]);
 		}
 
 		if (!resources[activeIndex].loaded)
 			$(loadingIndicator).show();
-		load(activeIndex);
+		load(resources[activeIndex]);
 		return false;
 	}
 	
@@ -365,6 +366,13 @@
 		dragStop();
 		setup(0);
 		
+		// abort loading progress
+		for (var i = 0; i < resources.length; ++i) {
+			var r = resources[i];
+			if ((!r.loaded) && (r.loading))
+				r.handler.abort(r);
+		}
+		
 		// resize center
 		$(overlay).stop().fadeOut(options.fadeDuration);
 		animateCenter([centerSize[0]/2, centerSize[1]/2], 0, options.fadeDuration);
@@ -432,10 +440,9 @@
 		Loading routines
 	*/
 	
-	function load(index) {
-		var r = resources[index];
+	function load(r) {
 		if (r.loaded)
-			loaded(index);
+			loaded(r);
 		if (r.loading)
 			return;
 		r.loading = true;
@@ -443,17 +450,16 @@
 		for (var i = resourceHandlers.length-1; i >= 0; --i) {
 			if (resourceHandlers[i].identify(r)) {
 				r.handler = resourceHandlers[i];
-				r.handler.preLoad(r, function() { loaded(index) });
+				r.handler.preLoad(r, function() { loaded(r) });
 				return;
 			}
 		}
 		
 		r.error = true;
-		loaded(index);
+		loaded(r);
 	}
 	
-	function loaded(index) {
-		var r = resources[index];
+	function loaded(r) {
 		if (!r.loaded) {
 			r.loaded = true;
 			
@@ -473,7 +479,7 @@
 			}
 		}
 
-		if (index == activeIndex)
+		if (resources[activeIndex] == r)
 			animateBox();
 	}
 	

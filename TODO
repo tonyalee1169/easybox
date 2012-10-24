@@ -1,6 +1,8 @@
 TODO LIST
 ----------
 
+* Edit handlers.js, make .abort functionality
+
 * DONE Create a HTML5 compatible autoloader
 * DONE Fix long captions
 * DONE Fix noNavigation issue
