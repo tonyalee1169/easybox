@@ -161,7 +161,7 @@
 		options.slideshow = ((options.slideshow) && (resources.length > 1)) ? options.slideshow : 0;
 		
 		// show slideshow button if slideshow and not disabled
-		$(slideLink).css({display: (((options.slideshow) && (resources.length > 1) && (!options.hideButtons)) ? '' : 'none')})
+		$(slideLink).removeClass('disabled').css({display: (((options.slideshow) && (resources.length > 1) && (!options.hideButtons)) ? '' : 'none')});
 		slideshowDirection = slideshowOff = false;
 		// show close button if not disabled
 		$(closeLink).css({display: ((!options.hideButtons) ? '' : 'none')})
