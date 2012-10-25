@@ -85,10 +85,6 @@
 	padding: 16px;
 }
 
-#easyBottom {
-	padding-top: 0;
-}
-
 /*
 	Disable borders
 */
@@ -103,7 +99,8 @@
 	font-family: Verdana, Arial, Geneva, Helvetica, sans-serif;
 	color: #666;
 	text-align: left;
-	border-top: none;
+	padding-top: 0;
+	min-height: 24px;
 }
 
 /*
