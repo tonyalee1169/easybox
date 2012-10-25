@@ -79,8 +79,7 @@
 						closeLink = $('<a id="easyCloseLink" href="#" />').click(userClose)[0],
 						slideLink = $('<a id="easySlideLink" href="#" />').click(toggleSlide)[0],
 						caption = $('<div id="easyCaption" />')[0],
-						number = $('<div id="easyNumber" />')[0],
-						$('<div style="clear: both;" />')[0]
+						number = $('<div id="easyNumber" />')[0]
 					])[0]
 				])[0]
 			]).css("display", "none")
@@ -261,7 +260,7 @@
 
 		if (!r.error) {
 			// set caption
-			if (r.caption.length)
+			if ((!options.hideCaption) && (r.caption.length))
 				$(caption).html(r.caption).css({display: ''});
 			// resize container
 			$(container).width(r.width).height(r.height);
@@ -271,7 +270,7 @@
 		}
 		
 		// set number text
-		if ((resources.length > 1) && (options.counterText.length))
+		if ((!options.hideCaption) && (resources.length > 1) && (options.counterText.length))
 			$(number).html(options.counterText.replace(/{x}/, activeIndex + 1).replace(/{y}/, resources.length)).css({display: ''});
 
 		// retrieve center dimensions
@@ -321,9 +320,6 @@
 			if (nextIndex < 0) $(nextLink).addClass("disabled");
 		}
 		
-		if (!options.hideCaption)
-			$([caption, number]).show();
-
 		// fade in
 		$(bottom).fadeIn(options.captionFadeDuration);
 		$(center).animate({height: centerSize[1]+bottom.offsetHeight}, options.captionFadeDuration, options.resizeEasing);
