@@ -23,7 +23,9 @@
 	THE SOFTWARE.
 */
 
-(function($) {
+(function(wnd, doc, $) {
+	"use strict";
+
 	// Global options
 	var defaults = {
 		loop: false,                  // navigate between first and last image
@@ -50,9 +52,9 @@
 		previousKeys: [37],           // array of keycodes to navigate to the previous image, default: Left arrow (37), 'p' (80)
 		nextKeys: [39],               // array of keycodes to navigate to the next image, default: Right arrow (39), 'n' (78)
 		preventOtherKeys: true        // prevents handling of other keys
-		};
+	};
 	
-	var resourceHandlers = [], options, resources, activeIndex = -1, prevIndex, nextIndex, centerSize,
+	var resourceHandlers = [], options, resources, activeIndex = -1, prevIndex = -1, nextIndex = -1, centerSize,
 	    hiddenElements = [], slideshowDirection, slideshowOff,
 	// drag and drop vars
 	    dragging = false, dragOffX = 0, dragOffY = 0,
@@ -65,7 +67,7 @@
 		Initialization
 	*/
 	$(function() {
-		$("body").append(
+		$(doc.body).append(
 			$([
 				overlay = $('<div id="easyOverlay" />').click(userClose)[0],
 				center = $('<div id="easyCenter" />').append([
@@ -134,21 +136,31 @@
 
 	/*
 		API
-		Opens easybox with the specified parameters
 	*/
-	$.easybox = function(_resources, startIndex, _options) {
+	var E = $.easybox = easybox;
+	$.extend(E, {
+		previous: function() { return (prevIndex >= 0) ? !previous() : false },
+		next: function() { return (nextIndex >= 0) ? !next() : false },
+		hasPrevious: function() { return (prevIndex >= 0); },
+		hasNext: function() { return (nextIndex >= 0); },
+		close: function() { return (open) ? !close() : false },
+		isOpen: function() { return open; },
+		defaults: function(def) { defaults = $.extend(defaults, def); },
+		resourceHandler: function(h) { addResourceHandler(h); }
+	});
+	
+	function easybox(res, startIndex, opts) {
 		if (open)
 			return false;
 
 		// complete options
-		options = $.extend({}, defaults, _options);
+		options = $.extend({}, defaults, opts);
 
 		// fill resources array
-		var i = 0, len;
 		resources = [];
-		for (len = _resources.length; i < len; ++i) {
+		for (var i = 0; i < res.length; i++) {
 			resources.push($.extend({caption: "", width: 0, height: 0},
-						_resources[i], {handler: null, loaded: false, loading: false, error: false, obj: null}));
+						res[i], {handler: null, loaded: false, loading: false, error: false, obj: null}));
 		}
 		
 		if (!resources.length)
@@ -177,51 +189,7 @@
 		});
 
 		return false;
-	};
-
-	/*
-		Jump to previous resource
-		Returns true if successful, false otherwise
-	*/
-	$.easybox.previous = function() { return (prevIndex >= 0) ? !previous() : false };
-
-	/*
-		Jump to next resource
-		Returns true if successful, false otherwise
-	*/
-	$.easybox.next = function() { return (nextIndex >= 0) ? !next() : false };
-
-	/*
-		Close EasyBox
-		Returns true if close, false otherwise
-	*/
-	$.easybox.close = function() { return (open) ? !close() : false };
-
-	/*
-		Returns true if EasyBox is open, false otherwise
-	*/
-	$.easybox.isOpen = function() { return open; };
-
-	/*
-		Change default options
-	*/
-	$.easybox.defaults = function(def) { defaults = $.extend(defaults, def); }
-	
-	/*
-		Add a resource handler
-		
-		handler: Resource handler object
-	*/
-	$.easybox.resourceHandler = function(handler) {
-		resourceHandlers.push($.extend({
-			identify: function() { return false; },
-			preLoad: function(resource, loaded) { loaded(); },
-			postLoad: function() {},
-			abort: function() {},
-			show: function() {},
-			hide: function() {}
-		}, handler));
-	};
+	}
 	
 	/*
 		Change resource
@@ -330,10 +298,7 @@
 		Called by close() and change()
 	*/
 	function stop() {
-		// reset timers
-		if (slideshowTimeout != null) {clearTimeout(slideshowTimeout); slideshowTimeout = null; }
-		if (closeTimeout != null) {clearTimeout(closeTimeout); closeTimeout = null; }
-		
+		stopTimers();
 		if (activeIndex >= 0) {
 			var r = resources[activeIndex];
 			if ((!r.error) && (shown))
@@ -404,11 +369,10 @@
 		slideshowOff = (!slideshowOff);
 		slideshowDirection = false;
 		$(slideLink).toggleClass('disabled', slideshowOff);
-		if (!slideshowOff) {
+		if (!slideshowOff)
 			setTimers();
-		} else {
-			if (slideshowTimeout != null) {clearTimeout(slideshowTimeout); slideshowTimeout = null; }
-		}
+		else
+			stopTimers();
 
 		return false;
 	}
@@ -416,20 +380,34 @@
 	/*
 		TIMERS
 	*/
+	
 	function setTimers() {
-		if ((options.slideshow) && (!slideshowOff) && (slideshowTimeout == null)) {
-			if ((slideshowDirection) && (prevIndex >= 0)) { // backwards
-				slideshowTimeout = setTimeout(previous, options.slideshow);
-				return false;
-			} else if ((!slideshowDirection) && (nextIndex >= 0)) { // forwards
-				slideshowTimeout = setTimeout(next, options.slideshow);
-				return false;
+		if (!slideshowOff) {
+			if ((options.slideshow) && (slideshowTimeout == null)) {
+				if (slideshowDirection) {
+					// backwards
+					if (prevIndex >= 0) {
+						slideshowTimeout = setTimeout(previous, options.slideshow);
+						return false;
+					}
+				} else {
+					// forwards
+					if (nextIndex >= 0) {
+						slideshowTimeout = setTimeout(next, options.slideshow);
+						return false;
+					}
+				}
 			}
+			
+			if ((options.autoClose) && (closeTimeout == null))
+				closeTimeout = setTimeout(close, options.autoClose);
 		}
-		
-		if ((options.autoClose) && (closeTimeout == null))
-			closeTimeout = setTimeout(close, options.autoClose);
 		return false;
+	}
+	
+	function stopTimers() {
+		if (slideshowTimeout != null) {clearTimeout(slideshowTimeout); slideshowTimeout = null; }
+		if (closeTimeout != null) {clearTimeout(closeTimeout); closeTimeout = null; }
 	}
 	
 	/*
@@ -478,6 +456,17 @@
 		if (resources[activeIndex] == r)
 			animateBox();
 	}
+
+	function addResourceHandler(handler) {
+		resourceHandlers.push($.extend({
+			identify: function() { return false; },
+			preLoad: function(resource, loaded) { loaded(); },
+			postLoad: function() {},
+			abort: function() {},
+			show: function() {},
+			hide: function() {}
+		}, handler));
+	}
 	
 	/*
 		Event functionality
@@ -503,15 +492,15 @@
 		var fn = o ? "bind" : "unbind";
 		
 		// key handling
-		$(document)[fn]("keydown", keyDown);
+		$(doc)[fn]("keydown", keyDown);
 
 		// mousewheel functionality
 		if ($.fn.mousewheel)
-			$(window)[fn]('mousewheel', mouseWheel);
+			$(wnd)[fn]('mousewheel', mouseWheel);
 
 		// drag and drop functionality
 		$(center)[fn]("mousedown", dragStart)[fn]("mousemove", dragMove)[fn]("mouseup", dragStop);
-		$(window)[fn]('mousemove', dragMove)[fn]("mouseup", dragStop);
+		$(wnd)[fn]('mousemove', dragMove)[fn]("mouseup", dragStop);
 	}
 
 	/*
@@ -552,8 +541,8 @@
 	
 	function dragMove(e) {
 		if ((options.dragDrop) && (dragging)) {
-			position(e.pageX - $(window).scrollLeft() - dragOffX,
-			         e.pageY - $(window).scrollTop() - dragOffY);
+			position(e.pageX - $(wnd).scrollLeft() - dragOffX,
+			         e.pageY - $(wnd).scrollTop() - dragOffY);
 			return false;
 		}
 		return true;
@@ -579,4 +568,4 @@
 			return 1.2-Math.sqrt((t-0.7)/(1-0.7))*0.2;
 		}
 	}
-})(jQuery);
+})(window, document, jQuery);
