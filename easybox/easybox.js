@@ -57,7 +57,7 @@
 	};
 	
 	var resourceHandlers = [], options, resources, activeIndex = -1, prevIndex = -1, nextIndex = -1, centerSize,
-	    hiddenElements = [], slideshowDirection, slideshowOff,
+	    hiddenElements = [], slideshowDirection = false, slideshowOff = false,
 	// drag and drop vars
 	    dragging = false, dragOffX = 0, dragOffY = 0,
 	// state variables and timeouts
@@ -173,12 +173,6 @@
 		if (resources.length <= 1)
 			$.extend(options, {loop: false, slideshow: 0});
 		
-		// show slideshow button if slideshow and not disabled
-		$(slideLink).removeClass('disabled').css({display: (((options.slideshow > 0) && (!options.hideButtons)) ? '' : 'none')});
-		slideshowDirection = slideshowOff = false;
-		// show close button if not disabled
-		$(closeLink).css({display: ((!options.hideButtons) ? '' : 'none')})
-
 		// initializing center
 		centerSize = options.initCenterSize.slice();
 
@@ -283,11 +277,17 @@
 		if (options.hideBottom)
 			return;
 
-		if (((prevIndex >= 0) || (nextIndex >= 0)) && (!options.noNavigation) && (!options.hideButtons)) {
-			$(navLinks).css({display: ''});
-			$([caption, number]).addClass("nav");
-			if (prevIndex < 0) $(prevLink).addClass("disabled");
-			if (nextIndex < 0) $(nextLink).addClass("disabled");
+		if (!options.hideButtons) {
+			if (((prevIndex >= 0) || (nextIndex >= 0)) && (!options.noNavigation)) {
+				$(navLinks).css({display: ''});
+				$([caption, number]).addClass("nav");
+				if (prevIndex < 0) $(prevLink).addClass("disabled");
+				if (nextIndex < 0) $(nextLink).addClass("disabled");
+			}
+			if ((options.slideshow > 0) && (!options.noToggleSlideshow))
+				$(slideLink).css({display: ''});
+			if (!options.noClose)
+				$(closeLink).css({display: ''});
 		}
 		
 		// fade in
@@ -309,12 +309,17 @@
 		
 		// reset everything
 		$([container, caption, number]).html("");
-		$(loadingIndicator).hide();
-		$([bottom, container]).stop(true, true).hide();
+		$([bottom, container]).stop(true, true);
+		$([loadingIndicator, bottom, container, navLinks, caption, number, slideLink, closeLink]).hide();
 		$(center).stop(true).css({width: centerSize[0], height: centerSize[1], marginLeft: -centerSize[0]/2, marginTop: -centerSize[1]/2, opacity: ""});
-		$([navLinks, caption, number]).hide();
 		$([container, caption, number, prevLink, nextLink]).removeClass();
 		shown = busy = false;
+	}
+	
+	function reset() {
+		$(center).css({left: '', top: ''}).hide();
+		$(slideLink).removeClass('disabled');
+		slideshowDirection = slideshowOff = false;
 	}
 	
 	/*
@@ -340,7 +345,7 @@
 		$(overlay).stop().fadeOut(options.fadeDuration);
 		animateCenter([centerSize[0]/2, centerSize[1]/2], 0, options.fadeDuration);
 		$(center).queue(function(next) {
-			$(center).css({left: '', top: ''}).hide();
+			reset();
 			open = false;
 			next();
 		});
