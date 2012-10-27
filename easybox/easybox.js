@@ -36,6 +36,7 @@
 		hideButtons: false,           // hide buttons
 		noNavigation: false,          // disable navigation
 		noClose: false,               // disable close, only autoclose works
+		noToggleSlideshow: false,     // prevent user disabling slideshow
 		overlayOpacity: 0.8,          // opacity of the overlay from 0 to 1
 		resizeDuration: 400,          // box resize duration
 		resizeEasing: 'easybox',      // resize easing method; 'swing' = default
@@ -51,6 +52,7 @@
 		closeKeys: [27],              // array of keycodes to close easybox, default: Esc (27), 'x' (88), 'c' (67)
 		previousKeys: [37],           // array of keycodes to navigate to the previous image, default: Left arrow (37), 'p' (80)
 		nextKeys: [39],               // array of keycodes to navigate to the next image, default: Right arrow (39), 'n' (78)
+		toggleSlideshowKeys: [32],    // array of keycodees to enable/disable slideshow
 		preventOtherKeys: true        // prevents handling of other keys
 	};
 	
@@ -168,11 +170,11 @@
 		open = true;
 		
 		// set loop option
-		options.loop = ((options.loop) && (resources.length > 1));
-		options.slideshow = ((options.slideshow) && (resources.length > 1)) ? options.slideshow : 0;
+		if (resources.length <= 1)
+			$.extend(options, {loop: false, slideshow: 0});
 		
 		// show slideshow button if slideshow and not disabled
-		$(slideLink).removeClass('disabled').css({display: (((options.slideshow) && (resources.length > 1) && (!options.hideButtons)) ? '' : 'none')});
+		$(slideLink).removeClass('disabled').css({display: (((options.slideshow > 0) && (!options.hideButtons)) ? '' : 'none')});
 		slideshowDirection = slideshowOff = false;
 		// show close button if not disabled
 		$(closeLink).css({display: ((!options.hideButtons) ? '' : 'none')})
@@ -366,6 +368,9 @@
 	}
 
 	function toggleSlide() {
+		if (options.noToggleSlideshow)
+			return false;
+		
 		slideshowOff = (!slideshowOff);
 		slideshowDirection = false;
 		$(slideLink).toggleClass('disabled', slideshowOff);
@@ -512,6 +517,7 @@
 		return (fn(code, options.closeKeys) >= 0) ? userClose()
 			: ((fn(code, options.nextKeys) >= 0) && (!options.noNavigation)) ? next()
 			: ((fn(code, options.previousKeys) >= 0) && (!options.noNavigation)) ? previous()
+			: ((fn(code, options.toggleSlideshowKeys) >= 0) && (options.slideshow > 0)) ? toggleSlide()
 			: (!options.preventOtherKeys);
 	}
 
