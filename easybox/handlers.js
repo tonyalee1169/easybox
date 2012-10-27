@@ -22,8 +22,13 @@
 	OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 	THE SOFTWARE.
 */
-(function($) {
+(function(wnd, doc, $) {
+	"use strict";
+	
 	$(function() {
+		if (!$.easybox)
+			return;
+		
 		// iframe resource handler
 		$.easybox.resourceHandler({
 			identify: function(r) {
@@ -31,7 +36,8 @@
 			},
 			postLoad: function(r) {
 				r.obj = $("<iframe width=\""+r.width+"\" height=\""+r.height+"\" src=\""+r.url+"\" frameborder=\"0\"></iframe>")[0];
-			}		});
+			}
+		});
 		
 		// html resource handler
 		$.easybox.resourceHandler({
@@ -246,4 +252,4 @@
 			}
 		});
 	});
-})(jQuery);
+})(window, document, jQuery);
